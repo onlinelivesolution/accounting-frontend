@@ -234,10 +234,6 @@ const JournalEntry: React.FC = () => {
     };
 
 
-    /* =======================
-       JSX
-    ======================= */
-
     return (
         <div className="p-6 bg-white rounded shadow">
 
@@ -270,8 +266,8 @@ const JournalEntry: React.FC = () => {
             </div>
 
             {/* Table */}
-            <table className="w-full border text-sm">
-                <thead className="bg-gray-100">
+            <table className="w-full border border-gray-500 text-sm">
+                <thead className="bg-blue-200">
                     <tr>
                         <th className="p-2 text-left">Debit Account *</th>
                         <th className="p-2 text-left">Credit Account *</th>
@@ -286,7 +282,7 @@ const JournalEntry: React.FC = () => {
                 <tbody>
                     {rows.map(row => (
                         <tr key={row.rowId}>
-                            <td className="p-1 w-60">
+                            <td className="p-1 w-60 text-gray-800 text-sm">
                                 <DetailItemDropdown
                                     options={debitAccounts}
                                     value={row.debitItemCode}
@@ -297,7 +293,7 @@ const JournalEntry: React.FC = () => {
                                 />
                             </td>
 
-                            <td className="p-1 w-60">
+                            <td className="p-1 w-60 text-sm text-gray-800">
                                 <DetailItemDropdown
                                     options={creditAccounts}
                                     value={row.creditItemCode}
