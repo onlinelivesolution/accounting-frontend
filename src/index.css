@@ -1,3 +1,13 @@
 @import "tailwindcss";
+/* react-select fix for Tailwind */
+.react-select__menu {
+    pointer-events: auto !important;
+    z-index: 99999 !important;
+}
+
+.react-select__control {
+    pointer-events: auto !important;
+}
+
 
 

@@ -9,10 +9,12 @@ import Select from "react-select";
 
 export interface JournalRow {
     rowId: number;
-    journalDate?: string;
-    debitItemCode?: string;
-    creditItemCode?: string;
-    amount?: number;
+    debitItemCode?: string | null;
+    creditItemCode?: string | null;
+    amount: number;
+    vatRate: number;
+    vatAmount: number;
+    totalAmount: number;
     referenceNo?: string;
     description?: string;
 }
@@ -23,15 +25,30 @@ export interface DetailItemOption {
     reportingItemName: string;
 }
 
+/* =======================
+   Empty Row Factory
+======================= */
+
+const emptyRow = (id: number): JournalRow => ({
+    rowId: id,
+    debitItemCode: null,
+    creditItemCode: null,
+    amount: 0,
+    vatRate: 0,
+    vatAmount: 0,
+    totalAmount: 0,
+    referenceNo: "",
+    description: ""
+});
 
 /* =======================
-   Searchable Dropdown
+   DetailItemDropdown
 ======================= */
 
 interface DropdownProps {
-    value?: string;
+    value?: string | null;
     options: DetailItemOption[];
-    onChange: (value: string) => void;
+    onChange: (value: string | null) => void;
     placeholder: string;
 }
 
@@ -41,156 +58,169 @@ const DetailItemDropdown: React.FC<DropdownProps> = ({
     onChange,
     placeholder
 }) => {
-
     const groupedOptions = Object.values(
         options.reduce((acc: any, item) => {
             if (!acc[item.reportingItemName]) {
-                acc[item.reportingItemName] = {
-                    label: item.reportingItemName,
-                    options: []
-                };
+                acc[item.reportingItemName] = { label: item.reportingItemName, options: [] };
             }
-
             acc[item.reportingItemName].options.push({
                 value: item.detailItemCode,
                 label: `${item.detailItemCode} - ${item.detailItemName}`
             });
-
             return acc;
         }, {})
     );
 
+    const selectedOption =
+        groupedOptions.flatMap(g => g.options).find(o => o.value === value) || null;
+
     return (
         <Select
             options={groupedOptions}
-            value={
-                groupedOptions
-                    .flatMap(g => g.options)
-                    .find(o => o.value === value) || null
-            }
-            onChange={(e) => onChange(e?.value || "")}
+            value={selectedOption}
+            onChange={(opt) => onChange(opt?.value ?? null)}
             placeholder={placeholder}
             isSearchable
-            className="text-sm"
+            isClearable
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+            styles={{
+                menuPortal: base => ({ ...base, zIndex: 9999 }),
+                container: base => ({ ...base, width: "100%" })
+            }}
         />
     );
 };
-
 
 /* =======================
    Main Component
 ======================= */
 
 const JournalEntry: React.FC = () => {
-
     const [journalDate, setJournalDate] = useState("");
     const [referenceNo, setReferenceNo] = useState("");
     const [description, setDescription] = useState("");
 
     const [debitAccounts, setDebitAccounts] = useState<DetailItemOption[]>([]);
     const [creditAccounts, setCreditAccounts] = useState<DetailItemOption[]>([]);
+    const [rows, setRows] = useState<JournalRow[]>([emptyRow(1)]);
 
-    const [rows, setRows] = useState<JournalRow[]>([
-        { rowId: 1 }
-    ]);
-
-
+    /* =======================
+       Load Accounts
+    ======================== */
 
     useEffect(() => {
-        loadDebitAccounts();
-        loadCreditAccounts();
+        loadAccounts();
     }, []);
 
-    const loadDebitAccounts = async () => {
-        const res = await axios.get(
-            "http://127.0.0.1:8000/api/common/loadDetailItems"
-        );
-        setDebitAccounts(res.data);
+    const loadAccounts = async () => {
+        try {
+            const res = await axios.get(
+                "http://127.0.0.1:8000/api/common/loadDetailItems"
+            );
+            setDebitAccounts(res.data);
+            setCreditAccounts(res.data);
+        } catch (error) {
+            console.error("Error loading accounts:", error);
+        }
     };
 
-    const loadCreditAccounts = async () => {
-        const res = await axios.get(
-            "http://127.0.0.1:8000/api/common/loadDetailItems"
+    /* =======================
+       VAT Calculations
+    ======================== */
+
+    const calculateVat = (amount: number, rate: number) => {
+        const vatAmount = (amount * rate) / 100;
+        return {
+            vatAmount: Number(vatAmount.toFixed(2)),
+            totalAmount: Number((amount + vatAmount).toFixed(2))
+        };
+    };
+
+    const onAmountChange = (rowId: number, amount: number) => {
+        setRows(prev =>
+            prev.map(r => {
+                if (r.rowId !== rowId) return r;
+                const { vatAmount, totalAmount } = calculateVat(amount, r.vatRate);
+                return { ...r, amount, vatAmount, totalAmount };
+            })
         );
-        setCreditAccounts(res.data);
+    };
+
+    const onVatRateChange = (rowId: number, vatRate: number) => {
+        setRows(prev =>
+            prev.map(r => {
+                if (r.rowId !== rowId) return r;
+                const { vatAmount, totalAmount } = calculateVat(r.amount, vatRate);
+                return { ...r, vatRate, vatAmount, totalAmount };
+            })
+        );
     };
 
     /* =======================
        Row Helpers
-    ======================= */
+    ======================== */
 
     const addRowBelow = (rowId: number) => {
         setRows(prev => {
             const index = prev.findIndex(r => r.rowId === rowId);
-            const newRow: JournalRow = {
-                rowId: Date.now() // unique id
-            };
-
+            const newRow = emptyRow(Date.now());
             const updated = [...prev];
             updated.splice(index + 1, 0, newRow);
-
             return updated;
         });
     };
 
+    const removeRow = (rowId: number) => {
+        if (rows.length === 1) return;
+        setRows(prev => prev.filter(r => r.rowId !== rowId));
+    };
+
+    const isDuplicateCombination = (rowId: number, debit?: string | null, credit?: string | null) =>
+        rows.some(r => r.rowId !== rowId && r.debitItemCode === debit && r.creditItemCode === credit);
 
     const updateRow = (id: number, field: keyof JournalRow, value: any) => {
         setRows(prev =>
             prev.map(r => {
                 if (r.rowId !== id) return r;
 
-                const newDebit =
-                    field === "debitItemCode" ? value : r.debitItemCode;
-                const newCredit =
-                    field === "creditItemCode" ? value : r.creditItemCode;
+                const newDebit = field === "debitItemCode" ? value : r.debitItemCode;
+                const newCredit = field === "creditItemCode" ? value : r.creditItemCode;
 
-                // Same account check
-                if (newDebit && newCredit && newDebit === newCredit) {
-                    toast.error("Debit and Credit account cannot be same");
-                    return r;
+                if ((field === "debitItemCode" || field === "creditItemCode") && newDebit && newCredit) {
+                    if (newDebit === newCredit) {
+                        toast.error("Debit and Credit account cannot be same");
+                        return r;
+                    }
+                    if (isDuplicateCombination(id, newDebit, newCredit)) {
+                        toast.error("This Debit & Credit combination already exists");
+                        return r;
+                    }
                 }
 
-                // Duplicate row check
-                if (isDuplicateCombination(id, newDebit, newCredit)) {
-                    toast.error("This Debit & Credit combination already exists");
-                    return r;
+                let updatedRow = { ...r, [field]: value };
+
+                if (field === "amount" || field === "vatRate") {
+                    const amount = field === "amount" ? Number(value) : r.amount;
+                    const vatRate = field === "vatRate" ? Number(value) : r.vatRate;
+                    const { vatAmount, totalAmount } = calculateVat(amount, vatRate);
+                    updatedRow = { ...updatedRow, amount, vatRate, vatAmount, totalAmount };
                 }
 
-                return { ...r, [field]: value };
+                return updatedRow;
             })
-        );
-    };
-
-
-
-    const removeRow = (rowId: number) => {
-        if (rows.length === 1) return;
-
-        setRows(prev => prev.filter(r => r.rowId !== rowId));
-    };
-
-    const isDuplicateCombination = (
-        rowId: number,
-        debit?: string,
-        credit?: string
-    ) => {
-        return rows.some(r =>
-            r.rowId !== rowId &&
-            r.debitItemCode === debit &&
-            r.creditItemCode === credit
         );
     };
 
     /* =======================
        Validation
-    ======================= */
+    ======================== */
 
     const validateJournal = () => {
         if (!journalDate) {
             toast.error("Journal date is required");
             return false;
         }
-
         for (const row of rows) {
             if (!row.debitItemCode || !row.creditItemCode || !row.amount || row.amount <= 0) {
                 toast.error("Debit, Credit and Amount are mandatory in all rows");
@@ -202,7 +232,7 @@ const JournalEntry: React.FC = () => {
 
     /* =======================
        Submit
-    ======================= */
+    ======================== */
 
     const submitJournal = async () => {
         if (!validateJournal()) return;
@@ -216,27 +246,35 @@ const JournalEntry: React.FC = () => {
                 debitItemCode: r.debitItemCode,
                 creditItemCode: r.creditItemCode,
                 amount: r.amount,
+                vatRate: r.vatRate,
+                vatAmount: r.vatAmount,
+                totalAmount: r.totalAmount,
                 narration: r.description
             }))
         };
 
-        await axios.post(
-            "http://127.0.0.1:8000/api/commonjournal/createGeneralJournalEntry",
-            payload
-        );
-
-        toast.success("Journal Entry saved successfully");
-
-        // reset
-        setRows([{ rowId: 1 }]);
-        setReferenceNo("");
-        setDescription("");
+        try {
+            await axios.post(
+                "http://127.0.0.1:8000/api/commonjournal/createGeneralJournalEntry",
+                payload
+            );
+            toast.success("Journal Entry saved successfully");
+            // reset
+            setRows([emptyRow(1)]);
+            setReferenceNo("");
+            setDescription("");
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to save journal entry");
+        }
     };
 
+    /* =======================
+       JSX
+    ======================== */
 
     return (
         <div className="p-6 bg-white rounded shadow">
-
             <h2 className="text-lg font-semibold mb-4">Journal Entry</h2>
 
             {/* Header */}
@@ -247,7 +285,6 @@ const JournalEntry: React.FC = () => {
                     onChange={e => setJournalDate(e.target.value)}
                     className="border px-2 h-8 rounded text-sm"
                 />
-
                 <input
                     type="text"
                     placeholder="Reference No"
@@ -255,7 +292,6 @@ const JournalEntry: React.FC = () => {
                     onChange={e => setReferenceNo(e.target.value)}
                     className="border px-2 h-8 rounded text-sm"
                 />
-
                 <input
                     type="text"
                     placeholder="Description"
@@ -266,91 +302,76 @@ const JournalEntry: React.FC = () => {
             </div>
 
             {/* Table */}
-            <table className="w-full border border-gray-500 text-sm">
-                <thead className="bg-blue-200">
+            <table className="w-full border text-sm">
+                <thead className="bg-gray-100">
                     <tr>
                         <th className="p-2 text-left">Debit Account *</th>
                         <th className="p-2 text-left">Credit Account *</th>
+                        <th className="p-2 text-center">VAT Rate</th>
                         <th className="p-2 text-center">Amount *</th>
-                        <th className="p-2 text-left">Reference No</th>
-                        <th className="p-2 text-left">Description</th>
+                        <th className="p-2 text-center">VAT Amount</th>
+                        <th className="p-2 text-center">Total Amount</th>
                         <th className="p-2 w-20 text-center">Action</th>
-                        <th></th>
                     </tr>
                 </thead>
 
                 <tbody>
                     {rows.map(row => (
                         <tr key={row.rowId}>
-                            <td className="p-1 w-60 text-gray-800 text-sm">
+                            <td className="p-1 w-60">
                                 <DetailItemDropdown
                                     options={debitAccounts}
                                     value={row.debitItemCode}
                                     placeholder="Debit account"
-                                    onChange={(v) =>
-                                        updateRow(row.rowId, "debitItemCode", v)
-                                    }
+                                    onChange={v => updateRow(row.rowId, "debitItemCode", v)}
                                 />
                             </td>
-
-                            <td className="p-1 w-60 text-sm text-gray-800">
+                            <td className="p-1 w-60">
                                 <DetailItemDropdown
                                     options={creditAccounts}
                                     value={row.creditItemCode}
                                     placeholder="Credit account"
-                                    onChange={(v) =>
-                                        updateRow(row.rowId, "creditItemCode", v)
-                                    }
-
+                                    onChange={v => updateRow(row.rowId, "creditItemCode", v)}
                                 />
                             </td>
-
+                            <td className="p-1 w-32">
+                                <select
+                                    className="w-full h-8 border rounded px-2 text-sm"
+                                    value={row.vatRate ?? 0}
+                                    onChange={e => onVatRateChange(row.rowId, Number(e.target.value))}
+                                >
+                                    <option value={0}>None</option>
+                                    <option value={15}>VAT 15%</option>
+                                    <option value={10}>VAT 10%</option>
+                                    <option value={5}>VAT 5%</option>
+                                </select>
+                            </td>
                             <td className="p-1 w-40">
                                 <input
                                     type="number"
-                                    className="w-full h-8 text-right border rounded px-2 border-gray-500"
-                                    value={row.amount || ""}
-                                    onChange={(e) =>
-                                        updateRow(
-                                            row.rowId,
-                                            "amount",
-                                            Number(e.target.value)
-                                        )
-                                    }
+                                    className="w-full h-8 text-right border rounded px-2"
+                                    value={row.amount}
+                                    onChange={e => onAmountChange(row.rowId, Number(e.target.value))}
                                 />
                             </td>
-
-                            <td className="p-1 w-60">
+                            <td className="p-1 w-32 text-right">
                                 <input
                                     type="text"
-                                    className="w-full h-8 border rounded px-2"
-                                    onChange={(e) =>
-                                        updateRow(
-                                            row.rowId,
-                                            "referenceNo",
-                                            e.target.value
-                                        )
-                                    }
+                                    readOnly
+                                    value={row.vatAmount.toFixed(2)}
+                                    className="w-full h-8 border rounded px-2 bg-gray-100 text-right"
                                 />
                             </td>
-                            <td className="p-1">
+                            <td className="p-1 w-40 text-right">
                                 <input
                                     type="text"
-                                    className="w-full h-8 border rounded px-2"
-                                    onChange={(e) =>
-                                        updateRow(
-                                            row.rowId,
-                                            "description",
-                                            e.target.value
-                                        )
-                                    }
+                                    readOnly
+                                    value={row.totalAmount.toFixed(2)}
+                                    className="w-full h-8 border rounded px-2 bg-gray-100 text-right"
                                 />
                             </td>
-
                             <td className="p-1 text-center">
                                 <div className="flex justify-center gap-2">
-
-                                    {/* Add Row */}
                                     <button
                                         onClick={() => addRowBelow(row.rowId)}
                                         className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-700"
@@ -358,30 +379,26 @@ const JournalEntry: React.FC = () => {
                                     >
                                         A
                                     </button>
-
-                                    {/* Delete Row */}
                                     <button
                                         onClick={() => removeRow(row.rowId)}
                                         className={`px-2 py-1 rounded text-white ${rows.length === 1
-                                            ? "bg-gray-300 cursor-not-allowed"
-                                            : "bg-red-500 hover:bg-red-600"
+                                                ? "bg-gray-300 cursor-not-allowed"
+                                                : "bg-red-500 hover:bg-red-600"
                                             }`}
                                         disabled={rows.length === 1}
                                         title="Delete row"
                                     >
                                         D
                                     </button>
-
                                 </div>
                             </td>
-
                         </tr>
                     ))}
                 </tbody>
             </table>
 
             {/* Footer */}
-            <div className="flex items-right mt-4">
+            <div className="flex justify-end mt-4">
                 <button
                     onClick={submitJournal}
                     className="px-6 py-1 bg-green-600 text-white rounded"
