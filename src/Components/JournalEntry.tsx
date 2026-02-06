@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { ChevronDown } from "lucide-react";
+import DatePicker from "react-datepicker";
+import { Calendar } from "lucide-react";
+import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
@@ -41,9 +45,45 @@ const emptyRow = (id: number): JournalRow => ({
     description: ""
 });
 
-/* =======================
-   DetailItemDropdown
-======================= */
+const customSelectStyles = {
+    control: (base: any, state: any) => ({
+        ...base,
+        minHeight: "30px",
+        borderColor: state.isFocused ? "#0a0f18ff" : "#9ca3af", // blue / gray
+        boxShadow: state.isFocused ? "0 0 0 1px #1c1f24ff" : "none",
+        "&:hover": {
+            borderColor: "#0c1320ff"
+        },
+        fontSize: "0.875rem"
+    }),
+
+    option: (base: any, state: any) => ({
+        ...base,
+        backgroundColor: state.isSelected
+            ? "#2563eb"
+            : state.isFocused
+                ? "#dbeafe"
+                : "white",
+        color: state.isSelected ? "white" : "#111827",
+        fontSize: "0.875rem",
+        cursor: "pointer"
+    }),
+
+    singleValue: (base: any) => ({
+        ...base,
+        color: "#111827" // selected text color
+    }),
+
+    placeholder: (base: any) => ({
+        ...base,
+        color: "#6b7280" // placeholder color
+    }),
+
+    menu: (base: any) => ({
+        ...base,
+        zIndex: 9999
+    })
+};
 
 interface DropdownProps {
     value?: string | null;
@@ -77,17 +117,16 @@ const DetailItemDropdown: React.FC<DropdownProps> = ({
     return (
         <Select
             options={groupedOptions}
-            value={selectedOption}
-            onChange={(opt) => onChange(opt?.value ?? null)}
+            value={
+                groupedOptions
+                    .flatMap(g => g.options)
+                    .find(o => o.value === value) || null
+            }
+            onChange={(e) => onChange(e?.value || "")}
             placeholder={placeholder}
             isSearchable
-            isClearable
-            menuPortalTarget={document.body}
-            menuPosition="fixed"
-            styles={{
-                menuPortal: base => ({ ...base, zIndex: 9999 }),
-                container: base => ({ ...base, width: "100%" })
-            }}
+            styles={customSelectStyles}
+            className="text-sm"
         />
     );
 };
@@ -97,10 +136,10 @@ const DetailItemDropdown: React.FC<DropdownProps> = ({
 ======================= */
 
 const JournalEntry: React.FC = () => {
-    const [journalDate, setJournalDate] = useState("");
+    // const [journalDate, setJournalDate] = useState("");
+    const [journalDate, setJournalDate] = useState<Date | null>(new Date());
     const [referenceNo, setReferenceNo] = useState("");
     const [description, setDescription] = useState("");
-
     const [debitAccounts, setDebitAccounts] = useState<DetailItemOption[]>([]);
     const [creditAccounts, setCreditAccounts] = useState<DetailItemOption[]>([]);
     const [rows, setRows] = useState<JournalRow[]>([emptyRow(1)]);
@@ -246,14 +285,13 @@ const JournalEntry: React.FC = () => {
                 debitItemCode: r.debitItemCode,
                 creditItemCode: r.creditItemCode,
                 amount: r.amount,
-                vatRate: r.vatRate,
-                vatAmount: r.vatAmount,
-                totalAmount: r.totalAmount,
+                vatRate: r.vatRate ?? 0,
                 narration: r.description
             }))
         };
 
         try {
+            console.log("Submitting journal payload:", payload);
             await axios.post(
                 "http://127.0.0.1:8000/api/commonjournal/createGeneralJournalEntry",
                 payload
@@ -269,9 +307,7 @@ const JournalEntry: React.FC = () => {
         }
     };
 
-    /* =======================
-       JSX
-    ======================== */
+
 
     return (
         <div className="p-6 bg-white rounded shadow">
@@ -279,12 +315,26 @@ const JournalEntry: React.FC = () => {
 
             {/* Header */}
             <div className="grid grid-cols-4 gap-4 mb-4">
-                <input
-                    type="date"
-                    value={journalDate}
-                    onChange={e => setJournalDate(e.target.value)}
-                    className="border px-2 h-8 rounded text-sm"
-                />
+
+                <div className="flex items-center gap-2">
+                    <label className="w-40 text-sm">Journal Date</label>
+
+                    <div className="relative w-[180px]">
+                        <DatePicker
+                            selected={journalDate}
+                            onChange={setJournalDate}
+                            dateFormat="yyyy-MM-dd"
+                            popperPlacement="bottom-start"
+                            popperClassName="z-50"
+                            className="w-full h-[32px] px-2 rounded border border-gray-400 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-gray-700"
+                        />
+                        <Calendar
+                            size={16}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                        />
+                    </div>
+                </div>
+
                 <input
                     type="text"
                     placeholder="Reference No"
@@ -302,8 +352,8 @@ const JournalEntry: React.FC = () => {
             </div>
 
             {/* Table */}
-            <table className="w-full border text-sm">
-                <thead className="bg-gray-100">
+            <table className="w-full border border-gray-400 rounded rounded-lg text-sm">
+                <thead className="bg-blue-200">
                     <tr>
                         <th className="p-2 text-left">Debit Account *</th>
                         <th className="p-2 text-left">Credit Account *</th>
@@ -334,22 +384,32 @@ const JournalEntry: React.FC = () => {
                                     onChange={v => updateRow(row.rowId, "creditItemCode", v)}
                                 />
                             </td>
+
                             <td className="p-1 w-32">
-                                <select
-                                    className="w-full h-8 border rounded px-2 text-sm"
-                                    value={row.vatRate ?? 0}
-                                    onChange={e => onVatRateChange(row.rowId, Number(e.target.value))}
-                                >
-                                    <option value={0}>None</option>
-                                    <option value={15}>VAT 15%</option>
-                                    <option value={10}>VAT 10%</option>
-                                    <option value={5}>VAT 5%</option>
-                                </select>
+                                <div className="relative w-full">
+                                    <select
+                                        value={row.vatRate ?? 0}
+                                        onChange={e =>
+                                            onVatRateChange(row.rowId, Number(e.target.value))
+                                        }
+                                        className="w-full h-[36px] px-2 pr-8 rounded border border-gray-400 text-gray-500 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-gray-800"
+                                    >
+                                        <option value={0}>None</option>
+                                        <option value={15}>VAT 15%</option>
+                                        <option value={10}>VAT 10%</option>
+                                        <option value={5}>VAT 5%</option>
+                                    </select>
+
+                                    {/* Dropdown Arrow */}
+                                    <ChevronDown
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                                    />
+                                </div>
                             </td>
                             <td className="p-1 w-40">
                                 <input
                                     type="number"
-                                    className="w-full h-8 text-right border rounded px-2"
+                                    className="w-full h-9 text-right border rounded px-2 border-gray-400"
                                     value={row.amount}
                                     onChange={e => onAmountChange(row.rowId, Number(e.target.value))}
                                 />
@@ -359,7 +419,7 @@ const JournalEntry: React.FC = () => {
                                     type="text"
                                     readOnly
                                     value={row.vatAmount.toFixed(2)}
-                                    className="w-full h-8 border rounded px-2 bg-gray-100 text-right"
+                                    className="w-full h-9 text-right border rounded px-2 border-gray-400"
                                 />
                             </td>
                             <td className="p-1 w-40 text-right">
@@ -367,7 +427,7 @@ const JournalEntry: React.FC = () => {
                                     type="text"
                                     readOnly
                                     value={row.totalAmount.toFixed(2)}
-                                    className="w-full h-8 border rounded px-2 bg-gray-100 text-right"
+                                    className="w-full h-9 text-right border rounded px-2 border-gray-400"
                                 />
                             </td>
                             <td className="p-1 text-center">
@@ -382,8 +442,8 @@ const JournalEntry: React.FC = () => {
                                     <button
                                         onClick={() => removeRow(row.rowId)}
                                         className={`px-2 py-1 rounded text-white ${rows.length === 1
-                                                ? "bg-gray-300 cursor-not-allowed"
-                                                : "bg-red-500 hover:bg-red-600"
+                                            ? "bg-gray-300 cursor-not-allowed"
+                                            : "bg-red-500 hover:bg-red-600"
                                             }`}
                                         disabled={rows.length === 1}
                                         title="Delete row"
