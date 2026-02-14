@@ -12,6 +12,7 @@ import DepositWithdraw from "./Components/DepositWithdraw";
 import Dashboard from "./pages/Dashboard";
 import LoginUser from "./Components/LoginUser";
 import JournalEntry from "./Components/JournalEntry";
+import Quotations from "./Components/Quotations";
 import AddNewAccount from "./Components/AddNewAccount";
 import Employee from "./Components/Employees";
 import GenerateSalaries from "./Components/GenerateSalary";
@@ -241,11 +242,17 @@ const App: React.FC = () => {
       items.push({ name: "Bank Account", path: "/bankAccounts", category: "Accounts" });
       items.push({ name: "Add New Account", path: "/addNewAccount", category: "Accounts" });
       items.push({ name: "Bank Transaction", path: "/depositWithdraw", category: "Accounts" });
+      items.push({ name: "Quotation", path: "/quotations", category: "Accounts" });
+    }
+
+    if (hasPermission("Quotations", "Add Quotation")) {
+      items.push({ name: "Quotation", path: "/quotations", category: "Quotations" });
     }
 
     if (hasPermission("Employees", "Add Employee")) {
       items.push({ name: "Employee", path: "/employees", category: "Employee" });
       items.push({ name: "Payscale Mapping", path: "/payScaleMappings", category: "Employee" });
+
     }
 
     if (hasPermission("Salary", "Add Employee")) {
@@ -412,6 +419,16 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute permissionName="Accounts" actionName="Add Account">
                 <JournalEntry />
+              </ProtectedRoute>
+            }
+          />
+
+
+          <Route
+            path="/Quotations"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <Quotations />
               </ProtectedRoute>
             }
           />

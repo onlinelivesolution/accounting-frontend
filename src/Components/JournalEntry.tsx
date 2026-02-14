@@ -7,21 +7,24 @@ import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-/* =======================
-   Interfaces
-======================= */
+  
+interface VatRate {
+    id: number;
+    name: string;
+}
 
 export interface JournalRow {
     rowId: number;
-    debitItemCode?: string | null;
-    creditItemCode?: string | null;
+    debitItemCode: string;
+    creditItemCode: string;
     amount: number;
-    vatRate: number;
+    vatRateID: number;   // ✅ ID, not percent
     vatAmount: number;
     totalAmount: number;
-    referenceNo?: string;
+    narration?: string;
     description?: string;
 }
+
 
 export interface DetailItemOption {
     detailItemCode: string;
@@ -29,21 +32,20 @@ export interface DetailItemOption {
     reportingItemName: string;
 }
 
-/* =======================
-   Empty Row Factory
-======================= */
 
 const emptyRow = (id: number): JournalRow => ({
     rowId: id,
-    debitItemCode: null,
-    creditItemCode: null,
+    debitItemCode: "",
+    creditItemCode: "",
     amount: 0,
-    vatRate: 0,
+    vatRateID: 0,
     vatAmount: 0,
     totalAmount: 0,
-    referenceNo: "",
+    narration: "",
     description: ""
 });
+
+
 
 const customSelectStyles = {
     control: (base: any, state: any) => ({
@@ -131,22 +133,31 @@ const DetailItemDropdown: React.FC<DropdownProps> = ({
     );
 };
 
-/* =======================
-   Main Component
-======================= */
-
 const JournalEntry: React.FC = () => {
-    // const [journalDate, setJournalDate] = useState("");
+    const [vaterateID, setVaterateID] = useState<number | null>(null);
     const [journalDate, setJournalDate] = useState<Date | null>(new Date());
     const [referenceNo, setReferenceNo] = useState("");
     const [description, setDescription] = useState("");
     const [debitAccounts, setDebitAccounts] = useState<DetailItemOption[]>([]);
     const [creditAccounts, setCreditAccounts] = useState<DetailItemOption[]>([]);
     const [rows, setRows] = useState<JournalRow[]>([emptyRow(1)]);
+    const [vatRates, setVatRates] = useState<VatRate[]>([]);
 
-    /* =======================
-       Load Accounts
-    ======================== */
+    useEffect(() => {
+        const loadVatRates = async () => {
+            try {
+                const response = await axios.get(
+                    "http://127.0.0.1:8000/api/commondropdown/loadVatRateDropdown"
+                );
+
+                setVatRates(response.data);
+            } catch (error) {
+                console.error("Failed to load VAT rates", error);
+            }
+        };
+
+        loadVatRates();
+    }, []);
 
     useEffect(() => {
         loadAccounts();
@@ -164,41 +175,67 @@ const JournalEntry: React.FC = () => {
         }
     };
 
-    /* =======================
-       VAT Calculations
-    ======================== */
+    const getVatRatePercent = (vatRateID: number): number => {
+        if (!vatRateID) return 0;
 
-    const calculateVat = (amount: number, rate: number) => {
-        const vatAmount = (amount * rate) / 100;
-        return {
-            vatAmount: Number(vatAmount.toFixed(2)),
-            totalAmount: Number((amount + vatAmount).toFixed(2))
-        };
+        const vat = vatRates.find(v => v.id === vatRateID);
+        if (!vat) return 0;
+
+        // Extract number from "VAT 15%"
+        const match = vat.name.match(/\d+/);
+        return match ? Number(match[0]) : 0;
     };
 
-    const onAmountChange = (rowId: number, amount: number) => {
+    const calculateVat = (amount: number, vatPercent: number) => {
+        const vatAmount = +(amount * vatPercent / 100).toFixed(2);
+        const totalAmount = +(amount + vatAmount).toFixed(2);
+        return { vatAmount, totalAmount };
+    };
+
+
+
+
+    const onAmountChange = (rowId: number, value: string) => {
+        const amount = Number(value) || 0;
+
         setRows(prev =>
             prev.map(r => {
                 if (r.rowId !== rowId) return r;
-                const { vatAmount, totalAmount } = calculateVat(amount, r.vatRate);
-                return { ...r, amount, vatAmount, totalAmount };
+
+                const vatPercent = getVatRatePercent(r.vatRateID);
+                const { vatAmount, totalAmount } = calculateVat(amount, vatPercent);
+
+                return {
+                    ...r,
+                    amount,
+                    vatAmount,
+                    totalAmount
+                };
             })
         );
     };
 
-    const onVatRateChange = (rowId: number, vatRate: number) => {
+
+
+
+    const onVatRateChange = (rowId: number, vatRateID: number) => {
         setRows(prev =>
             prev.map(r => {
                 if (r.rowId !== rowId) return r;
-                const { vatAmount, totalAmount } = calculateVat(r.amount, vatRate);
-                return { ...r, vatRate, vatAmount, totalAmount };
+
+                const vatPercent = getVatRatePercent(vatRateID);
+                const { vatAmount, totalAmount } = calculateVat(r.amount, vatPercent);
+
+                return {
+                    ...r,
+                    vatRateID,
+                    vatAmount,
+                    totalAmount
+                };
             })
         );
     };
 
-    /* =======================
-       Row Helpers
-    ======================== */
 
     const addRowBelow = (rowId: number) => {
         setRows(prev => {
@@ -223,37 +260,22 @@ const JournalEntry: React.FC = () => {
             prev.map(r => {
                 if (r.rowId !== id) return r;
 
-                const newDebit = field === "debitItemCode" ? value : r.debitItemCode;
-                const newCredit = field === "creditItemCode" ? value : r.creditItemCode;
+                const updated = { ...r, [field]: value };
 
-                if ((field === "debitItemCode" || field === "creditItemCode") && newDebit && newCredit) {
-                    if (newDebit === newCredit) {
-                        toast.error("Debit and Credit account cannot be same");
-                        return r;
-                    }
-                    if (isDuplicateCombination(id, newDebit, newCredit)) {
-                        toast.error("This Debit & Credit combination already exists");
-                        return r;
-                    }
-                }
+                const vatPercent = getVatRatePercent(updated.vatRateID);
+                const { vatAmount, totalAmount } = calculateVat(
+                    Number(updated.amount) || 0,
+                    vatPercent
+                );
 
-                let updatedRow = { ...r, [field]: value };
-
-                if (field === "amount" || field === "vatRate") {
-                    const amount = field === "amount" ? Number(value) : r.amount;
-                    const vatRate = field === "vatRate" ? Number(value) : r.vatRate;
-                    const { vatAmount, totalAmount } = calculateVat(amount, vatRate);
-                    updatedRow = { ...updatedRow, amount, vatRate, vatAmount, totalAmount };
-                }
-
-                return updatedRow;
+                return {
+                    ...updated,
+                    vatAmount,
+                    totalAmount
+                };
             })
         );
     };
-
-    /* =======================
-       Validation
-    ======================== */
 
     const validateJournal = () => {
         if (!journalDate) {
@@ -268,46 +290,48 @@ const JournalEntry: React.FC = () => {
         }
         return true;
     };
-
-    /* =======================
-       Submit
-    ======================== */
-
     const submitJournal = async () => {
         if (!validateJournal()) return;
 
         const payload = {
-            journalDate,
+            journalDate: journalDate
+                ? new Date(journalDate).toISOString().split("T")[0]
+                : null,
             journalType: "MANUAL",
             referenceNo: referenceNo || null,
             description: description || null,
-            details: rows.map(r => ({
-                debitItemCode: r.debitItemCode,
-                creditItemCode: r.creditItemCode,
-                amount: r.amount,
-                vatRate: r.vatRate ?? 0,
-                narration: r.description
-            }))
+            details: rows.map(r => {
+                const vatPercent = getVatRatePercent(r.vatRateID);
+
+                return {
+                    debitItemCode: r.debitItemCode,
+                    creditItemCode: r.creditItemCode,
+                    amount: Number(r.amount),
+                    vatRateID: Number(r.vatRateID),
+                    vatPercent: Number(vatPercent),
+                    vatAmount: Number(r.vatAmount),
+                    totalAmount: Number(r.totalAmount),
+                    narration: r.description || null
+                };
+            })
         };
 
+        // ✅ IMPORTANT: log payload clearly
+        console.log("🚀 Journal Payload Sent From Frontend:");
+        console.table(payload.details);
+        console.log(JSON.stringify(payload, null, 2));
+
         try {
-            console.log("Submitting journal payload:", payload);
             await axios.post(
                 "http://127.0.0.1:8000/api/commonjournal/createGeneralJournalEntry",
                 payload
             );
             toast.success("Journal Entry saved successfully");
-            // reset
-            setRows([emptyRow(1)]);
-            setReferenceNo("");
-            setDescription("");
         } catch (error) {
-            console.error(error);
+            console.error("❌ API Error:", error);
             toast.error("Failed to save journal entry");
         }
     };
-
-
 
     return (
         <div className="p-6 bg-white rounded shadow">
@@ -388,30 +412,30 @@ const JournalEntry: React.FC = () => {
                             <td className="p-1 w-32">
                                 <div className="relative w-full">
                                     <select
-                                        value={row.vatRate ?? 0}
+                                        value={row.vatRateID}
                                         onChange={e =>
-                                            onVatRateChange(row.rowId, Number(e.target.value))
+                                            updateRow(row.rowId, "vatRateID", Number(e.target.value))
                                         }
-                                        className="w-full h-[36px] px-2 pr-8 rounded border border-gray-400 text-gray-500 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-gray-800"
+                                        className="w-full h-[36px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
                                     >
-                                        <option value={0}>None</option>
-                                        <option value={15}>VAT 15%</option>
-                                        <option value={10}>VAT 10%</option>
-                                        <option value={5}>VAT 5%</option>
+                                        {vatRates.map(v => (
+                                            <option key={v.id} value={v.id}>
+                                                {v.name}
+                                            </option>
+                                        ))}
                                     </select>
-
                                     {/* Dropdown Arrow */}
-                                    <ChevronDown
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
                                     />
                                 </div>
                             </td>
+
                             <td className="p-1 w-40">
                                 <input
                                     type="number"
-                                    className="w-full h-9 text-right border rounded px-2 border-gray-400"
                                     value={row.amount}
-                                    onChange={e => onAmountChange(row.rowId, Number(e.target.value))}
+                                    onChange={e => onAmountChange(row.rowId, e.target.value)}
+                                    className="w-full h-8 px-2 rounded border border-gray-400"
                                 />
                             </td>
                             <td className="p-1 w-32 text-right">
