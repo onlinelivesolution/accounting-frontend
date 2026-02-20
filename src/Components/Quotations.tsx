@@ -193,7 +193,6 @@ const Quotations: React.FC = () => {
         const exclusiveAmount = subTotal;
         const discountAmount = +(subTotal * discountNumber / 100);
         const afterDiscount = subTotal - discountAmount;
-
         const vatAmount = +(afterDiscount * row.vatPercent / 100).toFixed(2);
         const totalAmount = +(afterDiscount + vatAmount).toFixed(2);
 
@@ -544,6 +543,7 @@ const Quotations: React.FC = () => {
                     <tr>
                         <th className="p-2 text-left text-white">Line Item</th>
                         <th className="p-2 text-left text-white text-[10px]">Item Code</th>
+                        <th className="p-2 text-left text-white text-[10px]">Item Name</th>
                         <th className="p-2 text-center text-white text-[10px]">Unit Price</th>
                         <th className="p-2 text-center text-white text-[10px]">Quantity</th>
                         <th className="p-2 text-center text-white text-[10px]">VAT Rate</th>
@@ -582,6 +582,14 @@ const Quotations: React.FC = () => {
                                 <input
                                     type="text"
                                     value={row.itemCode ?? ""}
+                                    readOnly
+                                    className="w-full h-7 px-2 border border-gray-400 rounded"
+                                />
+                            </td>
+                            <td className="p-1 w-30">
+                                <input
+                                    type="text"
+                                    value={row.itemName ?? ""}
                                     readOnly
                                     className="w-full h-7 px-2 border border-gray-400 rounded"
                                 />

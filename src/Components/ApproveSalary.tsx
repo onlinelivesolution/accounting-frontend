@@ -65,7 +65,7 @@ const ApproveSalary: React.FC = () => {
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const [selectedDetails, setSelectedDetails] = useState<number[]>([]);
 
-    const FISCAL_YEARS = ["2023", "2024", "2025"];
+    const FISCAL_YEARS = ["2024", "2025", "2026"];
     const MONTHS = [
         { id: 1, name: "January" },
         { id: 2, name: "February" },

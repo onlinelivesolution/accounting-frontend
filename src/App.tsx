@@ -1,5 +1,6 @@
 // src/App.tsx
 import React, { useEffect, useState, useRef } from "react";
+import logo from "../public/logo.png";
 import {
   Routes,
   Route,
@@ -12,6 +13,8 @@ import DepositWithdraw from "./Components/DepositWithdraw";
 import Dashboard from "./pages/Dashboard";
 import LoginUser from "./Components/LoginUser";
 import JournalEntry from "./Components/JournalEntry";
+import BalanceSheet from "./Components/BalanceSheet";
+import ViewQuotation from "./Components/ViewQuotations";
 import Quotations from "./Components/Quotations";
 import AddNewAccount from "./Components/AddNewAccount";
 import Employee from "./Components/Employees";
@@ -80,7 +83,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
       <button
         onClick={() => onToggle(category)}
         aria-expanded={isOpen}
-        className={`flex items-center px-3 py-2 transition rounded ${activeParent ? "text-blue-700 font-semibold bg-blue-50" : "text-gray-700 hover:text-blue-600"
+        className={`flex items-center px-3 py-2 transition rounded ${activeParent ? "text-blue-700 text-[10px] bg-blue-50" : "text-gray-700 hover:text-blue-600"
           }`}
       >
         <span className="select-none">{label}</span>
@@ -162,7 +165,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ open, onClose, menuItems,
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Menu</h2>
+              <h2 className="text-[10px]">Menu</h2>
               <button onClick={onClose} aria-label="Close menu">
                 <X />
               </button>
@@ -186,7 +189,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ open, onClose, menuItems,
 
               {Array.from(new Set(menuItems.map((m) => m.category).filter(Boolean))).map((cat) => (
                 <div key={cat}>
-                  <div className="mt-3 mb-1 text-sm font-medium text-gray-500">{cat}</div>
+                  <div className="mt-3 mb-1 text-[10px] text-gray-500">{cat}</div>
                   <div className="flex flex-col">
                     {menuItems
                       .filter((m) => m.category === cat)
@@ -242,7 +245,8 @@ const App: React.FC = () => {
       items.push({ name: "Bank Account", path: "/bankAccounts", category: "Accounts" });
       items.push({ name: "Add New Account", path: "/addNewAccount", category: "Accounts" });
       items.push({ name: "Bank Transaction", path: "/depositWithdraw", category: "Accounts" });
-      items.push({ name: "Quotation", path: "/quotations", category: "Accounts" });
+      items.push({ name: "Quotation", path: "/ViewQuotations", category: "Accounts" });
+      items.push({ name: "Balance Sheet", path: "/BalanceSheet", category: "Accounts" });
     }
 
     if (hasPermission("Quotations", "Add Quotation")) {
@@ -301,13 +305,18 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-white">
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       {user && (
-        <header className="bg-white shadow-md px-4 py-3 flex items-center justify-between md:px-6">
+        <header className="bg-white shadow-md px-2 py-2 flex items-center justify-between md:px-6">
           <div className="flex items-center space-x-4 md:space-x-6" ref={menuRef}>
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-800">NYB ERP</h1>
+              <img
+                src={logo}
+                alt="Online Solution Logo"
+                className="h-8 w-auto pr-[10px]"
+              />
+              <h1 className="text-xl font-bold text-blue-500">Online Solution</h1>
             </div>
 
             {/* Desktop nav */}
@@ -425,10 +434,28 @@ const App: React.FC = () => {
 
 
           <Route
+            path="/ViewQuotations"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <ViewQuotation />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/Quotations"
             element={
               <ProtectedRoute permissionName="Accounts" actionName="Add Account">
                 <Quotations />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/BalanceSheet"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <BalanceSheet />
               </ProtectedRoute>
             }
           />
