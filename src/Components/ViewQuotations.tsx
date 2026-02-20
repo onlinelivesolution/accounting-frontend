@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from "../api/axiosClient";
+
 
 interface QuotationDetail {
     quotationDetailID: number;
@@ -27,66 +27,55 @@ interface Quotation {
 
 const ViewQuotations: React.FC = () => {
     const navigate = useNavigate();
-    const [quotationData, setQuotationData] = useState<Quotation[]>([]);
     const [selectedDetails, setSelectedDetails] = useState<number[]>([]);
-    const [expandedId, setExpandedId] = useState<number | null>(null);
     const [openDropdown, setOpenDropdown] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [selectedQuotations, setSelectedQuotations] = useState<number[]>([]);
     const [selectAll, setSelectAll] = useState(false);
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const [details, setDetails] = useState<Record<number, any[]>>({});
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(1);
+    const [pageSize] = useState(10);
     const [total, setTotal] = useState(0);
-    const limit = 10;
     const [filterType, setFilterType] = useState<string>("ALL");
-    const [quotationNo, setQuotationNo] = useState<string>("");
     const [quotations, setQuotations] = useState<Quotation[]>([]);
-  
+    const [quotationNo, setQuotationNo] = useState("");
+    const totalPages = Math.ceil(total / pageSize);
 
+    const fetchQuotations = async () => {
+        const res = await fetch(
+            `http://127.0.0.1:8000/api/quotations/getQuotationFilters?filterType=${filterType}&quotationNo=${quotationNo}&page=${page}&pageSize=${pageSize}`
+        );
 
-
-    const loadQuotations = async () => {
-        try {
-            const response = await axios.get(
-                "http://127.0.0.1:8000/api/quotations/getQuotationFilters",
-                {
-                    params: {
-                        filterType,
-                        quotationNo: quotationNo || undefined
-                    }
-                }
-            );
-
-            console.log("API Response:", response.data); // DEBUG
-            setQuotations(response.data);
-        } catch (error) {
-            console.error("Failed to load quotations", error);
-        }
+        const data = await res.json();
+        setQuotations(data.items);
+        setTotal(data.total);
     };
+
     useEffect(() => {
-        loadQuotations();
-    }, [filterType, quotationNo]);
+        fetchQuotations();
+    }, [filterType, page]);
 
-
+    // const loadQuotations = async () => {
+    //     try {
+    //         const response = await axios.get(
+    //             "http://127.0.0.1:8000/api/quotations/getQuotationFilters",
+    //             {
+    //                 params: {
+    //                     filterType: filterType === "ALL" ? null : filterType,
+    //                     quotationNo: quotationNo || null
+    //                 }
+    //             }
+    //         );
+    //         setQuotations(response.data);
+    //     } catch (error) {
+    //         console.error("Failed to load quotations", error);
+    //     }
+    // };
 
     // useEffect(() => {
-    //     axios
-    //         .get("http://127.0.0.1:8000/api/quotations/getQuotationFilters")
-    //         .then(res => setQuotations(res.data))
-    //         .catch(err => console.error(err));
-    // }, []);
-
-    // useEffect(() => {
-    //     axios.get("http://127.0.0.1:8000/api/quotations/getQuotationFilters", {
-    //         params: {
-    //             filter,
-    //             search: search || undefined
-    //         }
-    //     })
-    //         .then(res => setQuotations(res.data))
-    //         .catch(err => console.error(err));
-    // }, [filter, search]);
+    //     loadQuotations();
+    // }, [filterType, quotationNo]);
 
 
     useEffect(() => {
@@ -120,18 +109,6 @@ const ViewQuotations: React.FC = () => {
         }
     };
 
-    // const loadQuotationTable = async () => {
-    //     try {
-    //         const res = await axiosClient.get("http://127.0.0.1:8000/api/quotations/loadQuotationTable");
-    //         setQuotations(res.data);
-    //     } catch (err) {
-    //         console.error(err);
-    //     }
-    // };
-
-    // useEffect(() => {
-    //     loadQuotationTable();
-    // }, []);
 
     const handleParentCheckbox = (quotation: Quotation) => {
         const allSelected = quotation.details.every(d =>
@@ -154,7 +131,7 @@ const ViewQuotations: React.FC = () => {
         }
     };
 
-    const handleChildCheckbox = (detailID: number, salary: Quotation) => {
+    const handleChildCheckbox = (detailID: number, quotation: Quotation) => {
         setSelectedDetails((prev) =>
             prev.includes(detailID)
                 ? prev.filter((id) => id !== detailID)
@@ -217,10 +194,13 @@ const ViewQuotations: React.FC = () => {
                         <div className="relative w-full">
                             <input
                                 type="text"
-                                placeholder="Search Quotation No"
+                                placeholder="Search by Quotation No"
                                 value={quotationNo}
-                                onChange={(e) => setQuotationNo(e.target.value)}
-                                className="w-full h-7 px-2 border border-gray-400 rounded text-[12px]"
+                                onChange={(e) => {
+                                    setQuotationNo(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="border px-2 py-1 rounded w-64"
                             />
                         </div>
                     </div>
@@ -229,8 +209,11 @@ const ViewQuotations: React.FC = () => {
                         <div className="relative w-full">
                             <select
                                 value={filterType}
-                                onChange={(e) => setFilterType(e.target.value)}
-                                className="border rounded px-2 py-1"
+                                onChange={(e) => {
+                                    setFilterType(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="border px-2 py-1 rounded"
                             >
                                 <option value="ALL">All (No Filter)</option>
                                 <option value="TODAY">Date Today</option>
@@ -251,20 +234,12 @@ const ViewQuotations: React.FC = () => {
                     <div className="flex items-center gap-2">
                         <label className="w-40 text-[10px] ml-[130px]">Customer</label>
                         <div className="relative w-full mr-[10px]">
-                            <select
-                                // value={selectedCustomer?.customerID ?? ""}
-                                // onChange={(e) => onCustomerChange(Number(e.target.value))}
-                                className="w-full text-[10px] text-gray-800 h-[28px] px-2 pr-8 rounded border border-gray-400 appearance-none"
+                            <button
+                                onClick={fetchQuotations}
+                                className="ml-2 px-4 py-1 bg-blue-600 text-white rounded"
                             >
-                                <option value="">Customer</option>
-                                {/* {customers.map(cu => (
-                                    <option key={cu.customerID} value={cu.customerID}>
-                                        {cu.customerName}
-                                    </option>
-                                ))} */}
-                            </select>
-                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                            />
+                                Search
+                            </button>
                         </div>
                     </div>
 
@@ -412,23 +387,26 @@ const ViewQuotations: React.FC = () => {
                 </div>
                 <div className="col-span-6 flex gap-2 mt-2">
                     <button
-                        disabled={page === 0}
-                        onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+                        disabled={page === 1}
+                        onClick={() => setPage(page - 1)}
                         className="w-[70px] h-[28px] bg-blue-200 hover:bg-blue-300 text-sm rounded-sm"
                     >
                         Previous
                     </button>
+                    <span className="mx-2">
+                        Page {page} of {totalPages}
+                    </span>
 
                     <button
-                        disabled={(page + 1) * limit >= total}
-                        onClick={() => setPage((prev) => prev + 1)}
+                        disabled={page === totalPages}
+                        onClick={() => setPage(page + 1)}
                         className="w-[70px] h-[28px] bg-blue-200 hover:bg-blue-300 text-sm rounded-sm"
                     >
                         Next
                     </button>
 
                     <div className="text-sm text-gray-600">
-                        Page {page + 1} of {Math.ceil(total / limit)} | Total: {total} records
+                        Page {page + 1} of {Math.ceil(total / pageSize)} | Total: {total} records
                     </div>
                 </div>
             </div>
