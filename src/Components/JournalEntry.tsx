@@ -136,7 +136,6 @@ const DetailItemDropdown: React.FC<DropdownProps> = ({
 };
 
 const JournalEntry: React.FC = () => {
-    const [vaterateID, setVaterateID] = useState<number | null>(null);
     const [journalDate, setJournalDate] = useState<Date | null>(new Date());
     const [referenceNo, setReferenceNo] = useState("");
     const [description, setDescription] = useState("");
@@ -220,17 +219,17 @@ const JournalEntry: React.FC = () => {
 
 
 
-    const onVatRateChange = (rowId: number, vatRateID: number) => {
+    const onVatRateChange = (rowId: number, vATRateID: number) => {
         setRows(prev =>
             prev.map(r => {
                 if (r.rowId !== rowId) return r;
 
-                const vatPercent = getVatRatePercent(vatRateID);
+                const vatPercent = getVatRatePercent(vATRateID);
                 const { vatAmount, totalAmount } = calculateVat(r.amount, vatPercent);
 
                 return {
                     ...r,
-                    vatRateID,
+                    vATRateID,
                     vatAmount,
                     totalAmount
                 };
@@ -303,7 +302,7 @@ const JournalEntry: React.FC = () => {
             referenceNo: referenceNo || null,
             description: description || null,
             details: rows.map(r => {
-                const vatPercent = getVatRatePercent(r.vATRateID);
+                
 
                 return {
                     debitItemCode: r.debitItemCode,

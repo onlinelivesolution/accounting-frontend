@@ -116,13 +116,13 @@ const customSelectStyles = {
 const SalesOrders: React.FC = () => {
     const [journalDate, setJournalDate] = useState<Date | null>(new Date());
     const [referenceNo, setReferenceNo] = useState("");
-    const [quotationNo, setQuotationNo] = useState<string>("");
+    const [salesOrderNo, setSalesOrderNo] = useState<string>("");
     const [rows, setRows] = useState<QuotationRow[]>([emptyRow(1)]);
     const [vatRates, setVatRates] = useState<VatRate[]>([]);
     const [lineItems, setLineItems] = useState<LineItem[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-    const [quotationDate, setQuotationDate] = useState<Date | null>(new Date());
+    const [salesOrderDate, setSalesOrderDate] = useState<Date | null>(new Date());
     const [customerID, setCustomerID] = useState<number | null>(null);
     const [remarks, setRemarks] = useState("");
     const [quantity, setQuantity] = useState("1.00");
@@ -181,8 +181,8 @@ const SalesOrders: React.FC = () => {
 
     useEffect(() => {
         axios
-            .get("http://127.0.0.1:8000/api/quotations/getNextQuotationNo")
-            .then(res => setQuotationNo(res.data.quotationNo))
+            .get("http://127.0.0.1:8000/api/salesorders/getNextSalesOrderNo")
+            .then(res => setSalesOrderNo(res.data.salesOrderNo))
             .catch(err => console.error(err));
     }, []);
 
@@ -309,16 +309,16 @@ const SalesOrders: React.FC = () => {
             return;
         }
 
-        if (!quotationNo) {
-            alert("Quotation No not loaded");
+        if (!salesOrderNo) {
+            alert("Sales Order No not loaded");
             return;
         }
 
         const payload = {
-            quotationNo: quotationNo,
+            salesOrderNo: salesOrderNo,
 
-            quotationDate: quotationDate
-                ? quotationDate.toISOString().split("T")[0]
+            salesOrderDate: salesOrderDate
+                ? salesOrderDate.toISOString().split("T")[0]
                 : null,
 
             customerID: selectedCustomer.customerID,
@@ -342,20 +342,20 @@ const SalesOrders: React.FC = () => {
             }))
         };
 
-        console.log("🚀 Quotation Payload");
+        console.log("🚀 Sales Order Payload");
         console.log(JSON.stringify(payload, null, 2));
 
         try {
             await axios.post(
-                "http://127.0.0.1:8000/api/quotations/createQuotation",
+                "http://127.0.0.1:8000/api/salesorders/createSalesOrder",
                 payload
             );
 
-            alert("Quotation saved successfully");
+            alert("Sales Order saved successfully");
 
         } catch (error) {
-            console.error("❌ Failed to save quotation", error);
-            alert("Failed to save quotation");
+            console.error("❌ Failed to save sales order", error);
+            alert("Failed to save sales order");
         }
     };
 
@@ -463,11 +463,11 @@ const SalesOrders: React.FC = () => {
 
             <div className="grid grid-cols-5 gap-2 mb-3">
                 <div className="flex items-center gap-2">
-                    <label className="w-40 text-[10px]">Quotation No</label>
+                    <label className="w-40 text-[10px]">Order No</label>
                     <div className="relative w-full">
                         <input
                             type="text"
-                            value={quotationNo}
+                            value={salesOrderNo}
                             readOnly
                             className="w-full h-7 px-2 border border-gray-400 rounded text-[10px]"
                         />
