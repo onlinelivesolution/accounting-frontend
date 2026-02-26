@@ -1,25 +1,37 @@
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
+import DatePicker from "react-datepicker";
+import { Calendar } from "lucide-react";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface BalanceItem {
     name: string;
     amount: number;
 }
 
-interface BalanceSheetResponse {
-    asOfDate: string;
+interface BalanceSheetData {
     assets: BalanceItem[];
     liabilities: BalanceItem[];
     equity: BalanceItem[];
 }
 
-export default function BalanceSheet() {
-    const [data, setData] = useState<BalanceSheetResponse | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [asOfDate, setAsOfDate] = useState("");
+interface ApiItem {
+    DetailItemName: string;
+    ClosingBalance: number;
+}
 
-    useEffect(() => {
-        loadBalanceSheet();
-    }, []);
+interface BalanceSheetResponse {
+    assets: ApiItem[];
+    liabilities: ApiItem[];
+    equity: ApiItem[];
+}
+
+const BalanceSheet: React.FC = () => {
+    const [data, setData] = useState<BalanceSheetData | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [asOfDate, setAsOfDate] = useState<Date | null>(new Date());
+    const formatDate = (date: Date) =>
+        date.toISOString().split("T")[0];
 
     const loadBalanceSheet = async () => {
         if (!asOfDate) {
@@ -28,126 +40,125 @@ export default function BalanceSheet() {
         }
 
         setLoading(true);
+        setError("");
+        setData(null);
+
         try {
+            const dateStr = asOfDate.toISOString().split("T")[0];
             const response = await fetch(
-                `http://localhost:8000/accountreports/balance-sheet?as_of_date=${asOfDate}`
+                `http://127.0.0.1:8000/api/accountreports/balance-sheet?as_of_date=${dateStr}`
             );
-            const result = await response.json();
-            setData(result);
-        } catch (error) {
-            console.error("Failed to load balance sheet", error);
+
+            if (!response.ok) {
+                throw new Error("Failed to load balance sheet");
+            }
+
+            const result: BalanceSheetResponse = await response.json();
+
+            setData({
+                assets: result.assets.map(a => ({
+                    name: a.DetailItemName,
+                    amount: Number(a.ClosingBalance),
+                })),
+                liabilities: result.liabilities.map(l => ({
+                    name: l.DetailItemName,
+                    amount: Number(l.ClosingBalance),
+                })),
+                equity: result.equity.map(e => ({
+                    name: e.DetailItemName,
+                    amount: Number(e.ClosingBalance),
+                })),
+            });
+        } catch (err) {
+            console.error(err);
+            setError("Unable to load balance sheet data");
         } finally {
             setLoading(false);
         }
     };
 
+    const renderSection = (title: string, items: BalanceItem[]) => {
+        const total = items.reduce((sum, i) => sum + i.amount, 0);
 
-    const sum = (items: BalanceItem[] = []) =>
-        items.reduce((t, i) => t + i.amount, 0);
-
-    if (loading) {
-        return <div className="p-6 text-gray-600">Loading Balance Sheet...</div>;
-    }
+        return (
+            <div className="border rounded p-4">
+                <h2 className="font-semibold text-lg mb-2">{title}</h2>
+                <table className="w-full text-sm">
+                    <tbody>
+                        {items.map((item, index) => (
+                            <tr key={index} className="border-b">
+                                <td className="py-1">{item.name}</td>
+                                <td className="py-1 text-right">
+                                    {item.amount.toLocaleString()}
+                                </td>
+                            </tr>
+                        ))}
+                        <tr className="font-bold">
+                            <td>Total {title}</td>
+                            <td className="text-right">
+                                {total.toLocaleString()}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
 
     return (
-        <div className="p-6 max-w-6xl mx-auto">
-            <h1 className="text-2xl font-semibold text-gray-800 mb-4">
-                Balance Sheet
-            </h1>
+        <div className="p-6 max-w-5xl mx-auto">
+            <h1 className="text-2xl font-bold mb-4">Balance Sheet</h1>
 
-            {/* Filters */}
-            <div className="flex items-center gap-4 mb-6">
-                <label className="text-sm text-gray-600">As of Date</label>
-                <input
-                    type="date"
-                    value={asOfDate}
-                    onChange={(e) => setAsOfDate(e.target.value)}
-                    className="border rounded px-3 py-1 text-sm"
+            <div className="flex gap-3 mb-4">
+                <div className="relative w-[180px]">
+                    <DatePicker
+                        selected={asOfDate}
+                        onChange={(date: Date | null) => setAsOfDate(date)}
+                        dateFormat="yyyy-MM-dd"
+                        popperPlacement="bottom-start"
+                        popperClassName="z-50"
+                        className="w-full h-[28px] pl-2 pr-8 rounded border border-gray-400 text-gray-700 text-[12px] focus:outline-none focus:ring-2 focus:ring-gray-700"
+                    />
+
+                    <Calendar
+                        size={14}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                    />
+                </div>
+
+                {/* <DatePicker
+                    selected={asOfDate}
+                    onChange={(date: Date | null) => setAsOfDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    popperPlacement="bottom-start"
+                    popperClassName="z-50"
+                    className="w-full h-[28px] px-2 rounded border border-gray-400 text-gray-700 text-[12px] focus:outline-none focus:ring-2 focus:ring-gray-700"
                 />
+                <Calendar
+                    size={16}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                /> */}
+
                 <button
                     onClick={loadBalanceSheet}
-                    className="bg-gray-800 text-white px-4 py-1 rounded text-sm hover:bg-gray-900"
+                    className="bg-blue-600 text-white px-4 py-1 rounded"
                 >
                     Load
                 </button>
             </div>
 
+            {loading && <p>Loading...</p>}
+            {error && <p className="text-red-600">{error}</p>}
+
             {data && (
-                <div className="grid grid-cols-2 gap-8">
-                    {/* ASSETS */}
-                    <section>
-                        <h2 className="text-lg font-semibold text-gray-700 mb-2">
-                            Assets
-                        </h2>
-                        <div className="border rounded">
-                            {data.assets.map((item, index) => (
-                                <div
-                                    key={index}
-                                    className="flex justify-between px-4 py-2 border-b text-sm"
-                                >
-                                    <span>{item.name}</span>
-                                    <span>{item.amount.toLocaleString()}</span>
-                                </div>
-                            ))}
-                            <div className="flex justify-between px-4 py-2 font-semibold bg-gray-100">
-                                <span>Total Assets</span>
-                                <span>{sum(data.assets).toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* LIABILITIES + EQUITY */}
-                    <section>
-                        <h2 className="text-lg font-semibold text-gray-700 mb-2">
-                            Liabilities
-                        </h2>
-                        <div className="border rounded mb-6">
-                            {data.liabilities.map((item, index) => (
-                                <div
-                                    key={index}
-                                    className="flex justify-between px-4 py-2 border-b text-sm"
-                                >
-                                    <span>{item.name}</span>
-                                    <span>{item.amount.toLocaleString()}</span>
-                                </div>
-                            ))}
-                            <div className="flex justify-between px-4 py-2 font-semibold bg-gray-100">
-                                <span>Total Liabilities</span>
-                                <span>{sum(data.liabilities).toLocaleString()}</span>
-                            </div>
-                        </div>
-
-                        <h2 className="text-lg font-semibold text-gray-700 mb-2">
-                            Equity
-                        </h2>
-                        <div className="border rounded">
-                            {data.equity.map((item, index) => (
-                                <div
-                                    key={index}
-                                    className="flex justify-between px-4 py-2 border-b text-sm"
-                                >
-                                    <span>{item.name}</span>
-                                    <span>{item.amount.toLocaleString()}</span>
-                                </div>
-                            ))}
-                            <div className="flex justify-between px-4 py-2 font-semibold bg-gray-100">
-                                <span>Total Equity</span>
-                                <span>{sum(data.equity).toLocaleString()}</span>
-                            </div>
-                        </div>
-
-                        {/* TOTAL */}
-                        <div className="mt-6 border rounded bg-gray-50">
-                            <div className="flex justify-between px-4 py-3 font-bold text-gray-800">
-                                <span>Total Liabilities & Equity</span>
-                                <span>
-                                    {(sum(data.liabilities) + sum(data.equity)).toLocaleString()}
-                                </span>
-                            </div>
-                        </div>
-                    </section>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {renderSection("Assets", data.assets)}
+                    {renderSection("Liabilities", data.liabilities)}
+                    {renderSection("Equity", data.equity)}
                 </div>
             )}
         </div>
     );
-}
+};
+
+export default BalanceSheet;

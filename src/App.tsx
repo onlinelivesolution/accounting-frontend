@@ -16,6 +16,8 @@ import JournalEntry from "./Components/JournalEntry";
 import BalanceSheet from "./Components/BalanceSheet";
 import ViewQuotation from "./Components/ViewQuotations";
 import Quotations from "./Components/Quotations";
+import ViewSalesOrder from "./Components/ViewSalesOrders";
+import SalesOrders from "./Components/SalesOrders";
 import AddNewAccount from "./Components/AddNewAccount";
 import Employee from "./Components/Employees";
 import GenerateSalaries from "./Components/GenerateSalary";
@@ -246,6 +248,7 @@ const App: React.FC = () => {
       items.push({ name: "Add New Account", path: "/addNewAccount", category: "Accounts" });
       items.push({ name: "Bank Transaction", path: "/depositWithdraw", category: "Accounts" });
       items.push({ name: "Quotation", path: "/ViewQuotations", category: "Accounts" });
+      items.push({ name: "Sales Order", path: "/ViewSalesOrders", category: "Accounts" });
       items.push({ name: "Balance Sheet", path: "/BalanceSheet", category: "Accounts" });
     }
 
@@ -316,7 +319,10 @@ const App: React.FC = () => {
                 alt="Online Solution Logo"
                 className="h-8 w-auto pr-[10px]"
               />
-              <h1 className="text-xl font-bold text-blue-500">Online Solution</h1>
+              <h1 className="text-xl font-bold">
+                <span style={{ color: "#00CDCD" }}>Online</span>{" "}
+                <span style={{ color: "#8B1C62" }}>Solution</span>
+              </h1>
             </div>
 
             {/* Desktop nav */}
@@ -447,6 +453,24 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute permissionName="Accounts" actionName="Add Account">
                 <Quotations />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/ViewSalesOrders"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <ViewSalesOrder />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/SalesOrders"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesOrders />
               </ProtectedRoute>
             }
           />

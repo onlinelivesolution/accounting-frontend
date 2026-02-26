@@ -7,8 +7,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-  
-interface VatRate {
+
+interface VatRates {
     id: number;
     name: string;
 }
@@ -18,7 +18,8 @@ export interface JournalRow {
     debitItemCode: string;
     creditItemCode: string;
     amount: number;
-    vatRateID: number;   // ✅ ID, not percent
+    vATRateID: number;
+    vatPercent: number;  // ✅ ID, not percent
     vatAmount: number;
     totalAmount: number;
     narration?: string;
@@ -38,7 +39,8 @@ const emptyRow = (id: number): JournalRow => ({
     debitItemCode: "",
     creditItemCode: "",
     amount: 0,
-    vatRateID: 0,
+    vATRateID: 0,
+    vatPercent: 0,
     vatAmount: 0,
     totalAmount: 0,
     narration: "",
@@ -141,7 +143,7 @@ const JournalEntry: React.FC = () => {
     const [debitAccounts, setDebitAccounts] = useState<DetailItemOption[]>([]);
     const [creditAccounts, setCreditAccounts] = useState<DetailItemOption[]>([]);
     const [rows, setRows] = useState<JournalRow[]>([emptyRow(1)]);
-    const [vatRates, setVatRates] = useState<VatRate[]>([]);
+    const [vatRatess, setVatRates] = useState<VatRates[]>([]);
 
     useEffect(() => {
         const loadVatRates = async () => {
@@ -178,7 +180,7 @@ const JournalEntry: React.FC = () => {
     const getVatRatePercent = (vatRateID: number): number => {
         if (!vatRateID) return 0;
 
-        const vat = vatRates.find(v => v.id === vatRateID);
+        const vat = vatRatess.find(v => v.id === vatRateID);
         if (!vat) return 0;
 
         // Extract number from "VAT 15%"
@@ -202,7 +204,7 @@ const JournalEntry: React.FC = () => {
             prev.map(r => {
                 if (r.rowId !== rowId) return r;
 
-                const vatPercent = getVatRatePercent(r.vatRateID);
+                const vatPercent = getVatRatePercent(r.vATRateID);
                 const { vatAmount, totalAmount } = calculateVat(amount, vatPercent);
 
                 return {
@@ -262,7 +264,7 @@ const JournalEntry: React.FC = () => {
 
                 const updated = { ...r, [field]: value };
 
-                const vatPercent = getVatRatePercent(updated.vatRateID);
+                const vatPercent = getVatRatePercent(updated.vATRateID);
                 const { vatAmount, totalAmount } = calculateVat(
                     Number(updated.amount) || 0,
                     vatPercent
@@ -301,16 +303,13 @@ const JournalEntry: React.FC = () => {
             referenceNo: referenceNo || null,
             description: description || null,
             details: rows.map(r => {
-                const vatPercent = getVatRatePercent(r.vatRateID);
+                const vatPercent = getVatRatePercent(r.vATRateID);
 
                 return {
                     debitItemCode: r.debitItemCode,
                     creditItemCode: r.creditItemCode,
                     amount: Number(r.amount),
-                    vatRateID: Number(r.vatRateID),
-                    vatPercent: Number(vatPercent),
-                    vatAmount: Number(r.vatAmount),
-                    totalAmount: Number(r.totalAmount),
+                    vATRateID: Number(r.vATRateID),   // ONLY THIS
                     narration: r.description || null
                 };
             })
@@ -412,13 +411,13 @@ const JournalEntry: React.FC = () => {
                             <td className="p-1 w-32">
                                 <div className="relative w-full">
                                     <select
-                                        value={row.vatRateID}
+                                        value={row.vATRateID}
                                         onChange={e =>
-                                            updateRow(row.rowId, "vatRateID", Number(e.target.value))
+                                            updateRow(row.rowId, "vATRateID", Number(e.target.value))
                                         }
                                         className="w-full h-[36px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
                                     >
-                                        {vatRates.map(v => (
+                                        {vatRatess.map(v => (
                                             <option key={v.id} value={v.id}>
                                                 {v.name}
                                             </option>

@@ -113,7 +113,7 @@ const customSelectStyles = {
     })
 };
 
-const Quotations: React.FC = () => {
+const SalesOrders: React.FC = () => {
     const [journalDate, setJournalDate] = useState<Date | null>(new Date());
     const [referenceNo, setReferenceNo] = useState("");
     const [quotationNo, setQuotationNo] = useState<string>("");
@@ -382,7 +382,7 @@ const Quotations: React.FC = () => {
 
     return (
         <div className="p-6 bg-white rounded shadow">
-            <h2 className="text-sm font-semibold mb-6">Add New Quotation</h2>
+            <h2 className="text-sm font-semibold mb-6">Add New Sales Order</h2>
 
             {/* Header */}
             <div className="grid grid-cols-5 gap-2 mb-2">
@@ -789,4 +789,4 @@ const Quotations: React.FC = () => {
     );
 };
 
-export default Quotations;
+export default SalesOrders;

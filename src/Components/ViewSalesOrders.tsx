@@ -25,7 +25,7 @@ interface Quotation {
 
 
 
-const ViewQuotations: React.FC = () => {
+const ViewSalesOrders: React.FC = () => {
     const navigate = useNavigate();
     const [selectedDetails, setSelectedDetails] = useState<number[]>([]);
     const [openDropdown, setOpenDropdown] = useState<number | null>(null);
@@ -139,7 +139,7 @@ const ViewQuotations: React.FC = () => {
             <div className="grid grid-cols-6 col-span-6 bg-white p-4 border border-blue-300 rounded-lg gap-2">
                 <div className="col-span-6 flex flex-wrap items-center justify-between mb-2 gap-2">
                     <label className="text-gray-700 p-1 text-lg font-bold whitespace-nowrap">
-                        Customer Quotation
+                        Sales Order
                     </label>
                 </div>
                 <div className="col-span-6 flex flex-wrap items-center justify-end mb-2">
@@ -191,11 +191,11 @@ const ViewQuotations: React.FC = () => {
                     </div>
 
                     <button
-                        onClick={() => navigate("/Quotations")}
+                        onClick={() => navigate("/SalesOrders")}
                         className="min-w-[100px] h-[28px] bg-blue-600 text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
 
                     >
-                        New Quotation
+                        Sales Order
                     </button>
 
 
@@ -362,4 +362,4 @@ const ViewQuotations: React.FC = () => {
     );
 };
 
-export default ViewQuotations;
+export default ViewSalesOrders;
