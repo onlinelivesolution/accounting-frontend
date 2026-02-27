@@ -23,8 +23,6 @@ interface Quotation {
     details: QuotationDetail[];
 }
 
-
-
 const ViewSalesOrders: React.FC = () => {
     const navigate = useNavigate();
     const [selectedDetails, setSelectedDetails] = useState<number[]>([]);
@@ -204,7 +202,7 @@ const ViewSalesOrders: React.FC = () => {
                 {/* Quotation List */}
                 <div className="col-span-6 w-full h-[450px] overflow-x-auto overflow-y-auto border border-blue-300 rounded-lg">
                     <table className="min-w-full table-fixed text-[11px] border-l border-blue-300 border-r border-blue-300 rounded-lg">
-                        <thead className="bg-[#161f4d] border-b border-blue-300">
+                        <thead className="bg-[#1c3c61] border-b border-blue-300">
                             <tr>
                                 <th className="w-[50px] py-2 px-2 text-center border-b border-blue-300 border-l border-blue-300">
                                     <input
@@ -290,7 +288,7 @@ const ViewSalesOrders: React.FC = () => {
                                         <tr>
                                             <td colSpan={7} className="bg-gray-50 p-3">
                                                 <table className="w-full text-xs border border-blue-300">
-                                                    <thead className="bg-[#243483] text-white">
+                                                    <thead className="bg-[#29588f] text-white">
                                                         <tr>
                                                             <th className="w-[220px] p-2 border-b border-blue-300 text-left">Item Description</th>
                                                             <th className="w-[220px] p-2 border-b border-blue-300 text-right">Quantity</th>

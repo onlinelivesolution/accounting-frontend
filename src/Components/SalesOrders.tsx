@@ -323,10 +323,10 @@ const SalesOrders: React.FC = () => {
 
             customerID: selectedCustomer.customerID,
 
-            subtotalAmount: Number(totalExclusive),
+            exclusiveAmount: Number(totalExclusive),
 
             discountAmount: Number(totalDiscount),
-            vATAmount: Number(totalVat),
+            vatAmount: Number(totalVat),
             totalAmount: Number(grandTotal),
 
             remarks: remarks || null,
@@ -334,7 +334,7 @@ const SalesOrders: React.FC = () => {
 
             items: rows.map(r => ({
                 itemID: Number(r.itemID),
-                // itemDescription: r.description || "",
+                itemDescription: r.itemName || "",
                 quantity: Number(r.quantity ?? 1),
                 unitPrice: Number(r.unitPrice ?? 0),
                 discountAmount: Number(r.discountAmount ?? 0),
