@@ -123,10 +123,9 @@ const Quotations: React.FC = () => {
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [quotationDate, setQuotationDate] = useState<Date | null>(new Date());
-    const [customerID, setCustomerID] = useState<number | null>(null);
+
     const [remarks, setRemarks] = useState("");
-    const [quantity, setQuantity] = useState("1.00");
-    const [discountPercent, setDiscountPercent] = useState("0.00");
+
 
     const [vatReference, setVatReference] = useState("");
     const [creditLimit, setCreditLimit] = useState<number | null>(null);
@@ -300,12 +299,12 @@ const Quotations: React.FC = () => {
                 parseFloat(r.quantity) <= 0
             )
         ) {
-            alert("Please check item rows");
+            toast.error("Please check item rows");
             return;
         }
 
         if (!selectedCustomer) {
-            alert("Please select a customer");
+            toast.error("Please select a customer");
             return;
         }
 
@@ -334,7 +333,7 @@ const Quotations: React.FC = () => {
 
             items: rows.map(r => ({
                 itemID: Number(r.itemID),
-                // itemDescription: r.description || "",
+                itemDescription: r.itemName || "",
                 quantity: Number(r.quantity ?? 1),
                 unitPrice: Number(r.unitPrice ?? 0),
                 discountAmount: Number(r.discountAmount ?? 0),
@@ -539,7 +538,7 @@ const Quotations: React.FC = () => {
 
             {/* Table */}
             <table className="w-full text-[10px] border border-gray-400 rounded rounded-lg">
-                <thead className="bg-blue-500 text-[10px] leading-tight">
+                <thead className="bg-[#1c3c61] text-[10px] leading-tight">
                     <tr>
                         <th className="p-2 text-left text-white">Line Item</th>
                         <th className="p-2 text-left text-white text-[10px]">Item Code</th>

@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
@@ -27,7 +28,7 @@ interface Customer {
     creditLimit: number;
 }
 
-export interface QuotationRow {
+export interface SalesOrderRow {
     rowId: number;
     itemID?: number;
     itemCode: string;
@@ -44,7 +45,10 @@ export interface QuotationRow {
     amount: number;
 }
 
-
+interface QuotationDropdown {
+    quotationID: number;
+    quotationNo: string;
+}
 
 export interface DetailItemOption {
     detailItemCode: string;
@@ -53,7 +57,7 @@ export interface DetailItemOption {
 }
 
 
-const emptyRow = (id: number): QuotationRow => ({
+const emptyRow = (id: number): SalesOrderRow => ({
     rowId: id,
     itemID: undefined,
     itemCode: "",
@@ -70,7 +74,14 @@ const emptyRow = (id: number): QuotationRow => ({
     amount: 0
 });
 
-
+// const [items, setItems] = useState<{
+//     itemID: number;
+//     itemDescription: string;
+//     quantity: number;
+//     unitPrice: number;
+//     discountAmount: number;
+//     lineTotal: number;
+// }[]>([]);
 
 
 const customSelectStyles = {
@@ -117,19 +128,32 @@ const SalesOrders: React.FC = () => {
     const [journalDate, setJournalDate] = useState<Date | null>(new Date());
     const [referenceNo, setReferenceNo] = useState("");
     const [salesOrderNo, setSalesOrderNo] = useState<string>("");
-    const [rows, setRows] = useState<QuotationRow[]>([emptyRow(1)]);
+    const [rows, setRows] = useState<SalesOrderRow[]>([emptyRow(1)]);
     const [vatRates, setVatRates] = useState<VatRate[]>([]);
     const [lineItems, setLineItems] = useState<LineItem[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const navigate = useNavigate();
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [salesOrderDate, setSalesOrderDate] = useState<Date | null>(new Date());
-    const [customerID, setCustomerID] = useState<number | null>(null);
     const [remarks, setRemarks] = useState("");
     const [quantity, setQuantity] = useState("1.00");
     const [discountPercent, setDiscountPercent] = useState("0.00");
 
     const [vatReference, setVatReference] = useState("");
     const [creditLimit, setCreditLimit] = useState<number | null>(null);
+
+    const [quotationList, setQuotationList] = useState<QuotationDropdown[]>([]);
+    const [quotationID, setQuotationID] = useState<number | null>(null);
+
+    const [customerID, setCustomerID] = useState<number | null>(null);
+    const [items, setItems] = useState<any[]>([]);
+    const [subtotalAmount, setSubtotalAmount] = useState(0);
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [vATAmount, setVatAmount] = useState(0);
+    const [totalAmount, setTotalAmount] = useState(0);
+
+    const isFromQuotation = Boolean(quotationID);
+    <input disabled={isFromQuotation} />
 
     useEffect(() => {
         const loadVatRates = async () => {
@@ -186,7 +210,87 @@ const SalesOrders: React.FC = () => {
             .catch(err => console.error(err));
     }, []);
 
-    const recalculateRow = (row: QuotationRow): QuotationRow => {
+    useEffect(() => {
+        const loadQuotations = async () => {
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/quotations/quotationDropdown");
+                const data: QuotationDropdown[] = await response.json();
+                setQuotationList(data);
+            } catch (error) {
+                console.error("Failed to load quotation dropdown", error);
+            }
+        };
+
+        loadQuotations();
+    }, []);
+
+    useEffect(() => {
+        if (!quotationID) {
+            // Optional: reset form when quotation is cleared
+            setItems([]);
+            setSubtotalAmount(0);
+            setDiscountAmount(0);
+            setVatAmount(0);
+            setTotalAmount(0);
+            return;
+        }
+
+        const loadQuotationData = async () => {
+            try {
+                const res = await fetch(
+                    `/api/quotations/${quotationID}/to-sales-order`
+                );
+
+                if (!res.ok) {
+                    throw new Error("Failed to load quotation");
+                }
+
+                const data = await res.json();
+
+                // 🔹 Map quotation → sales order form
+                setCustomerID(data.customerID);
+                setItems(data.items);
+                setSubtotalAmount(data.exclusiveAmount);
+                setDiscountAmount(data.discountAmount);
+                setVatAmount(data.vatAmount);
+                setTotalAmount(data.totalAmount);
+
+            } catch (error) {
+                console.error("Quotation load error:", error);
+            }
+        };
+
+        loadQuotationData();
+    }, [quotationID]);
+
+    useEffect(() => {
+        if (!quotationID) return;
+
+        fetch(`http://127.0.0.1:8000/api/quotations/${quotationID}/to-sales-order`)
+            .then(res => res.json())
+            .then(data => {
+                // Map quotation items to rows
+                const mappedRows = data.items.map((item: any, index: number) => ({
+                    rowId: index + 1,
+                    itemID: item.itemID,
+                    itemCode: item.itemID.toString().padStart(6, "0"), // optional formatting
+                    itemName: item.itemDescription,
+                    unitPrice: item.unitPrice,
+                    quantity: item.quantity.toFixed(2),
+                    vATRateID: 1, // default VAT, or from item.vatRateID if available
+                    discountPercent: ((item.discountAmount / (item.unitPrice * item.quantity)) * 100).toFixed(2),
+                    discountAmount: item.discountAmount,
+                    exclusiveAmount: item.unitPrice * item.quantity - item.discountAmount,
+                    vatAmount: 0, // calculate VAT if needed
+                    totalAmount: item.lineTotal
+                }));
+
+                setRows(mappedRows); // ✅ Replace rows, do NOT push individually
+            });
+    }, [quotationID]);
+
+
+    const recalculateRow = (row: SalesOrderRow): SalesOrderRow => {
         const quantityNumber = parseFloat(row.quantity) || 0;
         const discountNumber = parseFloat(row.discountPercent) || 0;
         const subTotal = row.unitPrice * quantityNumber;
@@ -350,12 +454,12 @@ const SalesOrders: React.FC = () => {
                 "http://127.0.0.1:8000/api/salesorders/createSalesOrder",
                 payload
             );
-
-            alert("Sales Order saved successfully");
+            toast.success("Sales Order saved successfully");
+            navigate("/ViewSalesOrders");
 
         } catch (error) {
             console.error("❌ Failed to save sales order", error);
-            alert("Failed to save sales order");
+            toast.error("Failed to save sales order");
         }
     };
 
@@ -443,15 +547,21 @@ const SalesOrders: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <label className="w-40  text-[10px]">Address</label>
+                    <label className="w-40  text-[10px]">From Quotation</label>
                     <div className="relative w-full">
                         <select
-                            className="w-full text-[12px] text-gray-800 h-[28px] px-2 pr-8 rounded border border-gray-400 appearance-none"
+                            className="w-full text-[10px] text-gray-800 h-[28px] px-2 pr-8 rounded border border-gray-400 appearance-none"
+                            value={quotationID ?? ""}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setQuotationID(value ? Number(value) : null);
+                            }}
                         >
-                            <option value="">Address</option>
-                            {lineItems.map(li => (
-                                <option key={li.itemID} value={li.itemID}>
-                                    {li.itemName}
+                            <option value="">Create Without Quotation</option>
+
+                            {quotationList.map((q) => (
+                                <option key={q.quotationID} value={q.quotationID}>
+                                    {q.quotationNo}
                                 </option>
                             ))}
                         </select>
@@ -539,7 +649,7 @@ const SalesOrders: React.FC = () => {
 
             {/* Table */}
             <table className="w-full text-[10px] border border-gray-400 rounded rounded-lg">
-                <thead className="bg-blue-500 text-[10px] leading-tight">
+                <thead className="bg-[#1c3c61] text-[10px] leading-tight">
                     <tr>
                         <th className="p-2 text-left text-white">Line Item</th>
                         <th className="p-2 text-left text-white text-[10px]">Item Code</th>

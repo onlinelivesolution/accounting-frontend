@@ -4,8 +4,8 @@ import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 
-interface QuotationDetail {
-    quotationDetailID: number;
+interface SalesOrderDetail {
+    salesOrderDetailID: number;
     itemID: number;
     itemDescription: string;
     quantity: number;
@@ -13,14 +13,14 @@ interface QuotationDetail {
     lineTotal: number;
 }
 
-interface Quotation {
-    quotationID: number;
-    quotationNo: string;
-    quotationDate: string;
+interface SalesOrder {
+    salesOrderID: number;
+    salesOrderNo: string;
+    salesOrderDate: string;
     customerName: string;
     totalAmount: number;
     status: string;
-    details: QuotationDetail[];
+    details: SalesOrderDetail[];
 }
 
 const ViewSalesOrders: React.FC = () => {
@@ -28,7 +28,7 @@ const ViewSalesOrders: React.FC = () => {
     const [selectedDetails, setSelectedDetails] = useState<number[]>([]);
     const [openDropdown, setOpenDropdown] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
-    const [selectedQuotations, setSelectedQuotations] = useState<number[]>([]);
+    const [selectedSalesOrders, setSelectedSalesOrders] = useState<number[]>([]);
     const [selectAll, setSelectAll] = useState(false);
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const [details, setDetails] = useState<Record<number, any[]>>({});
@@ -36,22 +36,22 @@ const ViewSalesOrders: React.FC = () => {
     const [pageSize] = useState(10);
     const [total, setTotal] = useState(0);
     const [filterType, setFilterType] = useState<string>("ALL");
-    const [quotations, setQuotations] = useState<Quotation[]>([]);
-    const [quotationNo, setQuotationNo] = useState("");
+    const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+    const [salesOrderNo, setSalesOrderNo] = useState("");
     const totalPages = Math.ceil(total / pageSize);
 
-    const fetchQuotations = async () => {
+    const fetchSalesOrders = async () => {
         const res = await fetch(
-            `http://127.0.0.1:8000/api/quotations/getQuotationFilters?filterType=${filterType}&quotationNo=${quotationNo}&page=${page}&pageSize=${pageSize}`
+            `http://127.0.0.1:8000/api/salesorders/getSalesOrderFilters?filterType=${filterType}&salesOrderNo=${salesOrderNo}&page=${page}&pageSize=${pageSize}`
         );
 
         const data = await res.json();
-        setQuotations(data.items);
+        setSalesOrders(data.items);
         setTotal(data.total);
     };
 
     useEffect(() => {
-        fetchQuotations();
+        fetchSalesOrders();
     }, [filterType, page]);
 
     useEffect(() => {
@@ -69,65 +69,65 @@ const ViewSalesOrders: React.FC = () => {
         setOpenDropdown(openDropdown === id ? null : id);
     };
 
-    const handleSelect = (quotationID: number) => {
-        setSelectedQuotations((prev) =>
-            prev.includes(quotationID)
-                ? prev.filter((id) => id !== quotationID)
-                : [...prev, quotationID]
+    const handleSelect = (salesOrderID: number) => {
+        setSelectedSalesOrders((prev) =>
+            prev.includes(salesOrderID)
+                ? prev.filter((id) => id !== salesOrderID)
+                : [...prev, salesOrderID]
         );
     };
     const handleSelectAll = () => {
         setSelectAll(!selectAll);
         if (!selectAll) {
-            setSelectedQuotations(quotations.map((qt) => qt.quotationID));
+            setSelectedSalesOrders(salesOrders.map((qt) => qt.salesOrderID));
         } else {
-            setSelectedQuotations([]);
+            setSelectedSalesOrders([]);
         }
     };
 
 
-    const handleParentCheckbox = (quotation: Quotation) => {
-        const allSelected = quotation.details.every(d =>
-            selectedDetails.includes(d.quotationDetailID)
+    const handleParentCheckbox = (salesOrder: SalesOrder) => {
+        const allSelected = salesOrder.details.every(d =>
+            selectedDetails.includes(d.salesOrderDetailID)
         );
 
         if (allSelected) {
             // Deselect all
             setSelectedDetails(prev =>
-                prev.filter(id => !quotation.details.some(d => d.quotationDetailID === id))
+                prev.filter(id => !salesOrder.details.some(d => d.salesOrderDetailID === id))
             );
         } else {
             // Select all
             setSelectedDetails(prev => [
                 ...prev,
-                ...quotation.details
-                    .map(d => d.quotationDetailID)
+                ...salesOrder.details
+                    .map(d => d.salesOrderDetailID)
                     .filter(id => !prev.includes(id))
             ]);
         }
     };
 
-    const handleChildCheckbox = (detailID: number, quotation: Quotation) => {
+    const handleChildCheckbox = (detailID: number, salesorder: SalesOrder) => {
         setSelectedDetails((prev) =>
             prev.includes(detailID)
                 ? prev.filter((id) => id !== detailID)
                 : [...prev, detailID]
         );
     };
-    const toggleQuotationExpand = async (quotationID: number) => {
+    const toggleSalesOrderExpand = async (salesOrderID: number) => {
         setExpandedRows(prev =>
-            prev.includes(quotationID)
-                ? prev.filter(id => id !== quotationID)
-                : [...prev, quotationID]
+            prev.includes(salesOrderID)
+                ? prev.filter(id => id !== salesOrderID)
+                : [...prev, salesOrderID]
         );
 
-        if (!details[quotationID]) {
+        if (!details[salesOrderID]) {
             const res = await axios.get(
-                `http://127.0.0.1:8000/api/quotations/${quotationID}`
+                `http://127.0.0.1:8000/api/salesorders/${salesOrderID}`
             );
             setDetails(prev => ({
                 ...prev,
-                [quotationID]: res.data.items
+                [salesOrderID]: res.data.items
             }));
         }
     };
@@ -146,9 +146,9 @@ const ViewSalesOrders: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="Search by Quotation No"
-                                value={quotationNo}
+                                value={salesOrderNo}
                                 onChange={(e) => {
-                                    setQuotationNo(e.target.value);
+                                    setSalesOrderNo(e.target.value);
                                     setPage(1);
                                 }}
                                 className="border border-gray-400 px-2 py-1 rounded h-[28px] text-[12px]"
@@ -180,8 +180,8 @@ const ViewSalesOrders: React.FC = () => {
                     <div className="flex items-center gap-2">
                         <div className="relative w-full mr-[10px]">
                             <button
-                                onClick={fetchQuotations}
-                                className="min-w-[60px] h-[28px] bg-blue-600 text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
+                                onClick={fetchSalesOrders}
+                                className="min-w-[60px] h-[28px] bg-[#1c3c61] text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
                             >
                                 Search
                             </button>
@@ -190,10 +190,10 @@ const ViewSalesOrders: React.FC = () => {
 
                     <button
                         onClick={() => navigate("/SalesOrders")}
-                        className="min-w-[100px] h-[28px] bg-blue-600 text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
+                        className="min-w-[100px] h-[28px] bg-[#1c3c61] text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
 
                     >
-                        Sales Order
+                        New Sales Order
                     </button>
 
 
@@ -214,7 +214,7 @@ const ViewSalesOrders: React.FC = () => {
                                 </th>
 
                                 <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Customer Name</th>
-                                <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Quotation No</th>
+                                <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Sales Order No</th>
                                 <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Date Creation</th>
                                 <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Total Amount</th>
                                 <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Status</th>
@@ -222,8 +222,8 @@ const ViewSalesOrders: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {quotations.map(q => (
-                                <React.Fragment key={q.quotationID}>
+                            {salesOrders.map(q => (
+                                <React.Fragment key={q.salesOrderID}>
                                     {/* ================= SUMMARY ROW ================= */}
                                     <tr>
                                         <td className="w-[50px] py-2 px-2 text-center border-b border-blue-300 border-l border-blue-300">
@@ -231,15 +231,15 @@ const ViewSalesOrders: React.FC = () => {
                                                 <input
                                                     type="checkbox"
                                                     className="w-4 h-4 accent-blue-500"
-                                                    checked={selectedQuotations.includes(q.quotationID)}
-                                                    onChange={() => handleSelect(q.quotationID)}
+                                                    checked={selectedSalesOrders.includes(q.salesOrderID)}
+                                                    onChange={() => handleSelect(q.salesOrderID)}
                                                 />
 
                                                 <button
                                                     className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#243483] rounded hover:bg-[#161f4d]"
-                                                    onClick={() => toggleQuotationExpand(q.quotationID)}
+                                                    onClick={() => toggleSalesOrderExpand(q.salesOrderID)}
                                                 >
-                                                    {expandedRows.includes(q.quotationID) ? "−" : "+"}
+                                                    {expandedRows.includes(q.salesOrderID) ? "−" : "+"}
                                                 </button>
                                             </div>
                                         </td>
@@ -248,10 +248,10 @@ const ViewSalesOrders: React.FC = () => {
                                             {q.customerName}
                                         </td>
                                         <td className="w-[220px] p-2 border-b border-blue-300">
-                                            {q.quotationNo}
+                                            {q.salesOrderNo}
                                         </td>
                                         <td className="w-[220px] p-2 border-b border-blue-300">
-                                            {q.quotationDate}
+                                            {q.salesOrderDate}
                                         </td>
                                         <td className="w-[220px] p-2 border-b border-blue-300">
                                             {q.totalAmount.toFixed(2)}
@@ -262,12 +262,12 @@ const ViewSalesOrders: React.FC = () => {
                                         <td className="w-[100px] p-2 border-b border-blue-300 relative">
                                             <button
                                                 className="text-xl font-bold text-blue-700"
-                                                onClick={() => toggleDropdown(q.quotationID)}
+                                                onClick={() => toggleDropdown(q.salesOrderID)}
                                             >
                                                 ...
                                             </button>
 
-                                            {openDropdown === q.quotationID && (
+                                            {openDropdown === q.salesOrderID && (
                                                 <div className="absolute right-0 top-8 w-40 bg-white border border-blue-400 shadow rounded z-50">
                                                     <button className="block w-full px-4 py-2 hover:bg-blue-200">
                                                         View Details
@@ -284,7 +284,7 @@ const ViewSalesOrders: React.FC = () => {
                                     </tr>
 
                                     {/* ================= EXPANDED DETAIL ROW ================= */}
-                                    {expandedRows.includes(q.quotationID) && (
+                                    {expandedRows.includes(q.salesOrderID) && (
                                         <tr>
                                             <td colSpan={7} className="bg-gray-50 p-3">
                                                 <table className="w-full text-xs border border-blue-300">
@@ -299,7 +299,7 @@ const ViewSalesOrders: React.FC = () => {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {(details[q.quotationID] || []).map((d, i) => (
+                                                        {(details[q.salesOrderID] || []).map((d, i) => (
                                                             <tr key={i}>
                                                                 <td className="w-[220px] p-2 border-b border-blue-300">
                                                                     {d.itemDescription}
