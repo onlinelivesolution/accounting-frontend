@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
@@ -125,7 +125,16 @@ const customSelectStyles = {
 };
 
 const SalesOrders: React.FC = () => {
-    const [journalDate, setJournalDate] = useState<Date | null>(new Date());
+    const today = new Date();
+
+    const addOneMonth = (date: Date): Date => {
+        const d = new Date(date);
+        d.setMonth(d.getMonth() + 1);
+        return d;
+    };
+
+    const [salesOrderDate, setSalesOrderDate] = useState<Date>(today);
+    const [expireDate, setExpireDate] = useState<Date>(addOneMonth(today));
     const [referenceNo, setReferenceNo] = useState("");
     const [salesOrderNo, setSalesOrderNo] = useState<string>("");
     const [rows, setRows] = useState<SalesOrderRow[]>([emptyRow(1)]);
@@ -134,7 +143,6 @@ const SalesOrders: React.FC = () => {
     const [customers, setCustomers] = useState<Customer[]>([]);
     const navigate = useNavigate();
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-    const [salesOrderDate, setSalesOrderDate] = useState<Date | null>(new Date());
     const [remarks, setRemarks] = useState("");
     const [quantity, setQuantity] = useState("1.00");
     const [discountPercent, setDiscountPercent] = useState("0.00");
@@ -149,11 +157,16 @@ const SalesOrders: React.FC = () => {
     const [items, setItems] = useState<any[]>([]);
     const [subtotalAmount, setSubtotalAmount] = useState(0);
     const [discountAmount, setDiscountAmount] = useState(0);
+    const [exclusiveAmount, setExclusiveAmount] = useState(0);
     const [vATAmount, setVatAmount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
 
     const isFromQuotation = Boolean(quotationID);
     <input disabled={isFromQuotation} />
+
+    const [searchParams] = useSearchParams();
+    const salesOrderID = searchParams.get("id");
+    const isEditMode = !!salesOrderID;
 
     useEffect(() => {
         const loadVatRates = async () => {
@@ -289,6 +302,40 @@ const SalesOrders: React.FC = () => {
             });
     }, [quotationID]);
 
+    // Load selected sales order information
+    useEffect(() => {
+        if (!isEditMode) return;
+
+        const loadSalesOrder = async () => {
+            const res = await axios.get(`/api/salesorders/${salesOrderID}`);
+            const data = res.data;
+
+            // 🔹 Header
+            setSalesOrderDate(new Date(data.salesOrderDate));
+            setExpireDate(data.expireDate ? new Date(data.expireDate) : null);
+            setCustomerID(data.customerID);
+
+            setExclusiveAmount(data.exclusiveAmount);
+            setDiscountAmount(data.discountAmount);
+            setVatAmount(data.vatAmount);
+            setTotalAmount(data.totalAmount);
+
+            // 🔹 Details
+            const mappedRows = data.items.map((item: any, index: number) => ({
+                rowId: index + 1,
+                itemID: item.itemID,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                discountAmount: item.discountAmount,
+                lineTotal: item.lineTotal
+            }));
+
+            setRows(mappedRows);
+        };
+
+        loadSalesOrder();
+    }, [salesOrderID]);
+
 
     const recalculateRow = (row: SalesOrderRow): SalesOrderRow => {
         const quantityNumber = parseFloat(row.quantity) || 0;
@@ -323,21 +370,36 @@ const SalesOrders: React.FC = () => {
         setCreditLimit(customer.creditLimit);
     };
 
+    const isItemAlreadyAdded = (itemID: number, currentRowId: number) => {
+        return rows.some(
+            r => r.itemID === itemID && r.rowId !== currentRowId
+        );
+    };
+
     const onItemChange = (rowId: number, itemID: number) => {
+
+        // ✅ Duplicate check
+        if (isItemAlreadyAdded(itemID, rowId)) {
+            alert("This item already added");
+            return;
+        }
+
         const selectedItem = lineItems.find(i => i.itemID === itemID);
         if (!selectedItem) return;
 
         setRows(prev =>
-            prev.map(row =>
-                row.rowId === rowId
-                    ? recalculateRow({
-                        ...row,
+            prev.map(r =>
+                r.rowId === rowId
+                    ? {
+                        ...r,
                         itemID: selectedItem.itemID,
                         itemCode: selectedItem.itemCode,
                         itemName: selectedItem.itemName,
-                        unitPrice: selectedItem.unitPrice
-                    })
-                    : row
+                        unitPrice: selectedItem.unitPrice,
+                        quantity: "1",
+                        discountPercent: "0"
+                    }
+                    : r
             )
         );
     };
@@ -424,7 +486,7 @@ const SalesOrders: React.FC = () => {
             salesOrderDate: salesOrderDate
                 ? salesOrderDate.toISOString().split("T")[0]
                 : null,
-
+            expireDate: expireDate.toISOString().split("T")[0],
             customerID: selectedCustomer.customerID,
 
             exclusiveAmount: Number(totalExclusive),
@@ -441,7 +503,9 @@ const SalesOrders: React.FC = () => {
                 itemDescription: r.itemName || "",
                 quantity: Number(r.quantity ?? 1),
                 unitPrice: Number(r.unitPrice ?? 0),
+                exclusiveAmount: Number(r.exclusiveAmount ?? 0),
                 discountAmount: Number(r.discountAmount ?? 0),
+                vatAmount: Number(r.vatAmount ?? 0),
                 lineTotal: Number(r.totalAmount ?? 0)
             }))
         };
@@ -450,11 +514,19 @@ const SalesOrders: React.FC = () => {
         console.log(JSON.stringify(payload, null, 2));
 
         try {
-            await axios.post(
-                "http://127.0.0.1:8000/api/salesorders/createSalesOrder",
-                payload
-            );
-            toast.success("Sales Order saved successfully");
+            // await axios.post(
+            //     "http://127.0.0.1:8000/api/salesorders/createSalesOrder",
+            //     payload
+            // );
+
+            if (isEditMode) {
+                await axios.put(`http://127.0.0.1:8000/api/salesorders/updateSalesOrder/${salesOrderID}`, payload);
+                toast.success("Sales Order updated successfully");
+            } else {
+                await axios.post("http://127.0.0.1:8000/api/salesorders/createSalesOrder", payload);
+                toast.success("Sales Order saved successfully");
+            }
+
             navigate("/ViewSalesOrders");
 
         } catch (error) {
@@ -597,15 +669,20 @@ const SalesOrders: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <label className="w-40  text-[10px]">Quotation Date</label>
+                    <label className="w-40  text-[10px]">Order Date</label>
                     <div className="relative w-[210px]">
                         <DatePicker
-                            selected={journalDate}
-                            onChange={setJournalDate}
+                            selected={salesOrderDate}
+                            onChange={(date: Date | null) => {
+                                if (!date) return;
+
+                                setSalesOrderDate(date);
+                                setExpireDate(addOneMonth(date)); // ✅ auto update
+                            }}
                             dateFormat="yyyy-MM-dd"
                             popperPlacement="bottom-start"
                             popperClassName="z-50"
-                            className="w-full h-[28px] px-2 rounded border border-gray-400 text-gray-700 text-[12px] focus:outline-none focus:ring-2 focus:ring-gray-700"
+                            className="w-full h-[28px] px-2 rounded border border-gray-400 text-gray-700 text-[12px]"
                         />
                         <Calendar
                             size={16}
@@ -617,12 +694,17 @@ const SalesOrders: React.FC = () => {
                     <label className="w-40  text-[10px]">Expire Date</label>
                     <div className="relative w-[210px]">
                         <DatePicker
-                            selected={journalDate}
-                            onChange={setJournalDate}
+                            selected={expireDate}
+                            onChange={(date: Date | null) => {
+                                if (!date) return;
+                                setExpireDate(date);
+                            }}
+                            minDate={addOneMonth(salesOrderDate)}
+                            openToDate={addOneMonth(salesOrderDate)}
                             dateFormat="yyyy-MM-dd"
                             popperPlacement="bottom-start"
                             popperClassName="z-50"
-                            className="w-full h-[28px] px-2 rounded border border-gray-400 text-gray-700  text-[12px] focus:outline-none focus:ring-2 focus:ring-gray-700"
+                            className="w-full h-[28px] px-2 rounded border border-gray-400 text-gray-700 text-[12px]"
                         />
                         <Calendar
                             size={16}

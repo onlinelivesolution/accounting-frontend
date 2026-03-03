@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { ChevronDown } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 
 interface SalesOrderDetail {
@@ -39,6 +39,9 @@ const ViewSalesOrders: React.FC = () => {
     const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
     const [salesOrderNo, setSalesOrderNo] = useState("");
     const totalPages = Math.ceil(total / pageSize);
+    const [searchParams] = useSearchParams();
+    const salesOrderID = searchParams.get("id");
+    const isEditMode = !!salesOrderID;
 
     const fetchSalesOrders = async () => {
         const res = await fetch(
@@ -65,9 +68,28 @@ const ViewSalesOrders: React.FC = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setOpenDropdown(null);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     const toggleDropdown = (id: number) => {
         setOpenDropdown(openDropdown === id ? null : id);
     };
+
+    
 
     const handleSelect = (salesOrderID: number) => {
         setSelectedSalesOrders((prev) =>
@@ -200,25 +222,25 @@ const ViewSalesOrders: React.FC = () => {
                 </div>
 
                 {/* Quotation List */}
-                <div className="col-span-6 w-full h-[450px] overflow-x-auto overflow-y-auto border border-blue-300 rounded-lg">
-                    <table className="min-w-full table-fixed text-[11px] border-l border-blue-300 border-r border-blue-300 rounded-lg">
-                        <thead className="bg-[#1c3c61] border-b border-blue-300">
+                <div className="col-span-6 w-full h-[450px] overflow-x-auto overflow-y-auto border-[#1c3c61] rounded-lg">
+                    <table className="min-w-full table-fixed text-[11px] border-[#1c3c61] rounded-lg">
+                        <thead className="bg-[#1c3c61]">
                             <tr>
-                                <th className="w-[50px] py-2 px-2 text-center border-b border-blue-300 border-l border-blue-300">
+                                <th className="w-[50px] py-2 px-2 text-center">
                                     <input
                                         type="checkbox"
-                                        className="w-4 h-4 accent-blue-500  pl-[15px]"
+                                        className="w-4 h-4 accent-[#1a4e8a] ml-[-20px] cursor-pointer p-2"
                                         checked={selectAll}
                                         onChange={handleSelectAll}
                                     />
                                 </th>
 
-                                <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Customer Name</th>
-                                <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Sales Order No</th>
-                                <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Date Creation</th>
-                                <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Total Amount</th>
-                                <th className="w-[220px] p-2 border-b border-blue-300 text-left text-white">Status</th>
-                                <th className="w-[100px] p-2 border-b border-blue-300 text-left text-white">Actions</th>
+                                <th className="w-[220px] p-2 text-left text-white">Customer Name</th>
+                                <th className="w-[220px] p-2 text-left text-white">Sales Order No</th>
+                                <th className="w-[220px] p-2 text-left text-white">Date Creation</th>
+                                <th className="w-[220px] p-2 text-left text-white">Total Amount</th>
+                                <th className="w-[220px] p-2 text-left text-white">Status</th>
+                                <th className="w-[100px] p-2 text-left text-white">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -226,17 +248,17 @@ const ViewSalesOrders: React.FC = () => {
                                 <React.Fragment key={q.salesOrderID}>
                                     {/* ================= SUMMARY ROW ================= */}
                                     <tr>
-                                        <td className="w-[50px] py-2 px-2 text-center border-b border-blue-300 border-l border-blue-300">
+                                        <td className="w-[50px] py-2 px-2 text-center border-b border-gray-400 border-l border-[#1c3c61]">
                                             <div className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
-                                                    className="w-4 h-4 accent-blue-500"
+                                                    className="w-4 h-4 accent-[#1c3c61] cursor-pointer"
                                                     checked={selectedSalesOrders.includes(q.salesOrderID)}
                                                     onChange={() => handleSelect(q.salesOrderID)}
                                                 />
 
                                                 <button
-                                                    className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#243483] rounded hover:bg-[#161f4d]"
+                                                    className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#1c3c61] rounded hover:bg-[#161f4d] cursor-pointer"
                                                     onClick={() => toggleSalesOrderExpand(q.salesOrderID)}
                                                 >
                                                     {expandedRows.includes(q.salesOrderID) ? "−" : "+"}
@@ -244,79 +266,136 @@ const ViewSalesOrders: React.FC = () => {
                                             </div>
                                         </td>
 
-                                        <td className="w-[220px] p-2 border-b border-blue-300">
+                                        <td className="w-[220px] p-2 border-b border-gray-400">
                                             {q.customerName}
                                         </td>
-                                        <td className="w-[220px] p-2 border-b border-blue-300">
+                                        <td className="w-[220px] p-2 border-b border-gray-400">
                                             {q.salesOrderNo}
                                         </td>
-                                        <td className="w-[220px] p-2 border-b border-blue-300">
+                                        <td className="w-[220px] p-2 border-b border-gray-400">
                                             {q.salesOrderDate}
                                         </td>
-                                        <td className="w-[220px] p-2 border-b border-blue-300">
+                                        <td className="w-[220px] p-2 border-b border-gray-400">
                                             {q.totalAmount.toFixed(2)}
                                         </td>
-                                        <td className="w-[220px] p-2 border-b border-blue-300">
+                                        <td className="w-[220px] p-2 border-b border-gray-400">
                                             {q.status}
                                         </td>
-                                        <td className="w-[100px] p-2 border-b border-blue-300 relative">
-                                            <button
-                                                className="text-xl font-bold text-blue-700"
-                                                onClick={() => toggleDropdown(q.salesOrderID)}
-                                            >
-                                                ...
-                                            </button>
+                                        <td className="w-[50px] p-2 border-b border-gray-400 relative">
+                                            <div ref={dropdownRef} className="relative inline-block">
+                                                <button
+                                                    type="button"
+                                                    className="flex items-center gap-2 text-[12px] text-blue-700 pr-2"
+                                                    onClick={() => toggleDropdown(q.salesOrderID)}
+                                                >
+                                                    Actions
+                                                    <ChevronDown
+                                                        className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${openDropdown === q.salesOrderID ? "" : ""
+                                                            }`}
+                                                    />
+                                                </button>
 
-                                            {openDropdown === q.salesOrderID && (
-                                                <div className="absolute right-0 top-8 w-40 bg-white border border-blue-400 shadow rounded z-50">
-                                                    <button className="block w-full px-4 py-2 hover:bg-blue-200">
-                                                        View Details
-                                                    </button>
-                                                    <button className="block w-full px-4 py-2 hover:bg-blue-200">
-                                                        Edit
-                                                    </button>
-                                                    <button className="block w-full px-4 py-2 hover:bg-blue-200">
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            )}
+                                                {openDropdown === q.salesOrderID && (
+                                                    <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
+                                                            onClick={() => navigate(`/salesorders/create?id=${q.salesOrderID}`)}
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                                                            Edit Status
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                                                            Print
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                                                            View History
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                                                            Create Invoice
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                                                            Copy Order
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
+
+                                        {/* <td className="w-[100px] p-2 border-b border-gray-400 relative cursor-pointer">
+                                            <div ref={dropdownRef}>
+                                                <button
+                                                    className="relative flex items-center gap-1 text-[12px] text-blue-700 pr-6"
+                                                    onClick={() => toggleDropdown(q.salesOrderID)}
+                                                >
+                                                    Actions
+                                                    <ChevronDown
+                                                        className={`w-4 h-4 text-gray-500 transition-transform ${openDropdown === q.salesOrderID ? "rotate-180" : ""
+                                                            }`}
+                                                    />
+                                                </button>
+
+
+                                                {openDropdown === q.salesOrderID && (
+                                                    <div className="absolute right-0 top-8 w-30 bg-white border border-blue-400 shadow rounded z-50">
+                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+                                                            Edit
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+                                                            Edit Status
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+                                                            Print
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+                                                            View History
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+                                                            Create Invoice
+                                                        </button>
+                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+                                                            Copy Order
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td> */}
                                     </tr>
 
                                     {/* ================= EXPANDED DETAIL ROW ================= */}
                                     {expandedRows.includes(q.salesOrderID) && (
-                                        <tr>
+                                        <tr className="">
                                             <td colSpan={7} className="bg-gray-50 p-3">
-                                                <table className="w-full text-xs border border-blue-300">
+                                                <table className="w-full text-xs border border-gray-400">
                                                     <thead className="bg-[#29588f] text-white">
                                                         <tr>
-                                                            <th className="w-[220px] p-2 border-b border-blue-300 text-left">Item Description</th>
-                                                            <th className="w-[220px] p-2 border-b border-blue-300 text-right">Quantity</th>
-                                                            <th className="w-[220px] p-2 border-b border-blue-300 text-right">Unit Price</th>
-                                                            <th className="w-[220px] p-2 border-b border-blue-300 text-right">Discount Amount</th>
-                                                            <th className="w-[220px] p-2 border-b border-blue-300 text-right">VAT Amount</th>
-                                                            <th className="w-[220px] p-2 border-b border-blue-300 text-right">Line Total</th>
+                                                            <th className="w-[220px] p-2 text-left">Item Description</th>
+                                                            <th className="w-[220px] p-2 text-right">Quantity</th>
+                                                            <th className="w-[220px] p-2 text-right">Unit Price</th>
+                                                            <th className="w-[220px] p-2 text-right">Discount Amount</th>
+                                                            <th className="w-[220px] p-2 text-right">VAT Amount</th>
+                                                            <th className="w-[220px] p-2 text-right">Line Total</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         {(details[q.salesOrderID] || []).map((d, i) => (
                                                             <tr key={i}>
-                                                                <td className="w-[220px] p-2 border-b border-blue-300">
+                                                                <td className="w-[220px] p-2 border-b border-gray-400">
                                                                     {d.itemDescription}
                                                                 </td>
-                                                                <td className="w-[220px] p-2 border-b border-blue-300 text-right">
+                                                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
                                                                     {d.quantity}
                                                                 </td>
-                                                                <td className="w-[220px] p-2 border-b border-blue-300 text-right">
+                                                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
                                                                     {d.unitPrice}
                                                                 </td>
-                                                                <td className="w-[220px] p-2 border-b border-blue-300 text-right">
+                                                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
                                                                     {d.discountAmount}
                                                                 </td>
-                                                                <td className="w-[220px] p-2 border-b border-blue-300 text-right">
+                                                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
                                                                     {d.vatAmount}
                                                                 </td>
-                                                                <td className="w-[220px] p-2 border-b border-blue-300 text-right">
+                                                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
                                                                     {d.lineTotal}
                                                                 </td>
                                                             </tr>
@@ -335,7 +414,7 @@ const ViewSalesOrders: React.FC = () => {
                     <button
                         disabled={page === 1}
                         onClick={() => setPage(page - 1)}
-                        className="w-[70px] h-[28px] bg-blue-200 hover:bg-blue-300 text-sm rounded-sm"
+                        className="w-[70px] h-[28px] bg-blue-200 hover:bg-blue-300 text-sm rounded-sm cursor-pointer"
                     >
                         Previous
                     </button>
@@ -346,7 +425,7 @@ const ViewSalesOrders: React.FC = () => {
                     <button
                         disabled={page === totalPages}
                         onClick={() => setPage(page + 1)}
-                        className="w-[70px] h-[28px] bg-blue-200 hover:bg-blue-300 text-sm rounded-sm"
+                        className="w-[70px] h-[28px] bg-blue-200 hover:bg-blue-300 text-sm rounded-sm cursor-pointer"
                     >
                         Next
                     </button>

@@ -204,12 +204,12 @@ const ViewQuotations: React.FC = () => {
                 {/* Quotation List */}
                 <div className="col-span-6 w-full h-[450px] overflow-x-auto overflow-y-auto border border-blue-300 rounded-lg">
                     <table className="min-w-full table-fixed text-[11px] border-l border-blue-300 border-r border-blue-300 rounded-lg">
-                        <thead className="bg-[#161f4d] border-b border-blue-300">
+                        <thead className="bg-[#1c3c61] border-b border-blue-300">
                             <tr>
                                 <th className="w-[50px] py-2 px-2 text-center border-b border-blue-300 border-l border-blue-300">
                                     <input
                                         type="checkbox"
-                                        className="w-4 h-4 accent-blue-500  pl-[15px]"
+                                        className="w-4 h-4 accent-[#1a4e8a] pl-[15px]"
                                         checked={selectAll}
                                         onChange={handleSelectAll}
                                     />
@@ -232,13 +232,13 @@ const ViewQuotations: React.FC = () => {
                                             <div className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
-                                                    className="w-4 h-4 accent-blue-500"
+                                                    className="w-4 h-4 accent-[#1c3c61]"
                                                     checked={selectedQuotations.includes(q.quotationID)}
                                                     onChange={() => handleSelect(q.quotationID)}
                                                 />
 
                                                 <button
-                                                    className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#243483] rounded hover:bg-[#161f4d]"
+                                                    className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#1c3c61] rounded hover:bg-[#161f4d]"
                                                     onClick={() => toggleQuotationExpand(q.quotationID)}
                                                 >
                                                     {expandedRows.includes(q.quotationID) ? "−" : "+"}
