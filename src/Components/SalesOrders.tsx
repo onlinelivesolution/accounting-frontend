@@ -4,10 +4,10 @@ import { ChevronDown } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
-import { useSearchParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import Select from "react-select";
-
+import { useCallback } from "react";
+import { useParams } from "react-router-dom";
+import api from "@/utils/axios";
 
 interface VatRate {
     id: number;
@@ -74,14 +74,6 @@ const emptyRow = (id: number): SalesOrderRow => ({
     amount: 0
 });
 
-// const [items, setItems] = useState<{
-//     itemID: number;
-//     itemDescription: string;
-//     quantity: number;
-//     unitPrice: number;
-//     discountAmount: number;
-//     lineTotal: number;
-// }[]>([]);
 
 
 const customSelectStyles = {
@@ -141,7 +133,6 @@ const SalesOrders: React.FC = () => {
     const [vatRates, setVatRates] = useState<VatRate[]>([]);
     const [lineItems, setLineItems] = useState<LineItem[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
-    const navigate = useNavigate();
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [remarks, setRemarks] = useState("");
     const [quantity, setQuantity] = useState("1.00");
@@ -161,13 +152,78 @@ const SalesOrders: React.FC = () => {
     const [vATAmount, setVatAmount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
 
-    const isFromQuotation = Boolean(quotationID);
-    <input disabled={isFromQuotation} />
+    const { id } = useParams();
+    const isEditMode = !!id;
+    const salesOrderID = Number(id);
 
-    const [searchParams] = useSearchParams();
-    const salesOrderID = searchParams.get("id");
-    const isEditMode = !!salesOrderID;
 
+
+    useEffect(() => {
+        if (!id || customers.length === 0) return;
+
+        loadSalesOrder();
+
+    }, [id, customers]);
+
+    const loadSalesOrder = async () => {
+        try {
+            const res = await api.get(`/api/salesorders/${id}`);
+
+            console.log("SalesOrder Data:", res.data);
+
+            const data = res.data;
+
+            // ✅ set customer
+            const customer = customers.find(
+                (c) => c.customerID === data.customerID
+            );
+
+            if (customer) {
+                setSelectedCustomer(customer);
+                setVatReference(customer.vatReference);
+                setCreditLimit(customer.creditLimit);
+            }
+
+            // ✅ set header info
+            setSalesOrderDate(new Date(data.salesOrderDate));
+
+            setExpireDate(
+                data.expireDate
+                    ? new Date(data.expireDate)
+                    : addOneMonth(new Date(data.salesOrderDate))
+            );
+
+            setReferenceNo(data.referenceNo || "");
+            setRemarks(data.remarks || "");
+
+            // ✅ map items to rows
+            const mappedRows = data.items.map((item: any, index: number) => ({
+                rowId: index + 1,
+                itemID: item.itemID,
+                itemCode: item.itemCode ?? "",
+                itemName: item.itemDescription ?? "",
+                unitPrice: item.unitPrice ?? 0,
+                quantity: item.quantity?.toString() ?? "1",
+                vatRateID: 0,
+                vatPercent: 0,
+                vatAmount: item.vatAmount ?? 0,
+                discountPercent: "0",
+                discountAmount: item.discountAmount ?? 0,
+                totalAmount: item.lineTotal ?? 0,
+                exclusiveAmount: item.exclusiveAmount ?? 0,
+                amount: item.lineTotal ?? 0
+            }));
+
+            if (mappedRows.length > 0) {
+                setRows(mappedRows);
+            }
+
+        } catch (error) {
+            console.error("Load error:", error);
+        }
+    };
+
+    // Load vat rates dropdown list
     useEffect(() => {
         const loadVatRates = async () => {
             try {
@@ -184,6 +240,7 @@ const SalesOrders: React.FC = () => {
         loadVatRates();
     }, []);
 
+    // Load line item dropdown list
     useEffect(() => {
         const loadLineItemDropdown = async () => {
             try {
@@ -200,6 +257,7 @@ const SalesOrders: React.FC = () => {
         loadLineItemDropdown();
     }, []);
 
+    // Load customer dropdown list
     useEffect(() => {
         const loadCustomerDropdown = async () => {
             try {
@@ -216,6 +274,7 @@ const SalesOrders: React.FC = () => {
         loadCustomerDropdown();
     }, []);
 
+    // Load next sales order number
     useEffect(() => {
         axios
             .get("http://127.0.0.1:8000/api/salesorders/getNextSalesOrderNo")
@@ -223,6 +282,7 @@ const SalesOrders: React.FC = () => {
             .catch(err => console.error(err));
     }, []);
 
+    // Load quotation number in dropdown list
     useEffect(() => {
         const loadQuotations = async () => {
             try {
@@ -248,6 +308,7 @@ const SalesOrders: React.FC = () => {
             return;
         }
 
+        // Load quotation information using quotation no to create sales order 
         const loadQuotationData = async () => {
             try {
                 const res = await fetch(
@@ -276,6 +337,8 @@ const SalesOrders: React.FC = () => {
         loadQuotationData();
     }, [quotationID]);
 
+
+
     useEffect(() => {
         if (!quotationID) return;
 
@@ -302,41 +365,8 @@ const SalesOrders: React.FC = () => {
             });
     }, [quotationID]);
 
-    // Load selected sales order information
-    useEffect(() => {
-        if (!isEditMode) return;
 
-        const loadSalesOrder = async () => {
-            const res = await axios.get(`/api/salesorders/${salesOrderID}`);
-            const data = res.data;
-
-            // 🔹 Header
-            setSalesOrderDate(new Date(data.salesOrderDate));
-            setExpireDate(data.expireDate ? new Date(data.expireDate) : null);
-            setCustomerID(data.customerID);
-
-            setExclusiveAmount(data.exclusiveAmount);
-            setDiscountAmount(data.discountAmount);
-            setVatAmount(data.vatAmount);
-            setTotalAmount(data.totalAmount);
-
-            // 🔹 Details
-            const mappedRows = data.items.map((item: any, index: number) => ({
-                rowId: index + 1,
-                itemID: item.itemID,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                discountAmount: item.discountAmount,
-                lineTotal: item.lineTotal
-            }));
-
-            setRows(mappedRows);
-        };
-
-        loadSalesOrder();
-    }, [salesOrderID]);
-
-
+    // Calculate row data and total information in the controls 
     const recalculateRow = (row: SalesOrderRow): SalesOrderRow => {
         const quantityNumber = parseFloat(row.quantity) || 0;
         const discountNumber = parseFloat(row.discountPercent) || 0;
@@ -356,6 +386,7 @@ const SalesOrders: React.FC = () => {
         };
     };
 
+    // Populate customer data when select customer
     const onCustomerChange = (id: number) => {
         const customer = customers.find(c => c.customerID === id);
         if (!customer) {
@@ -370,12 +401,14 @@ const SalesOrders: React.FC = () => {
         setCreditLimit(customer.creditLimit);
     };
 
+    // Get item id to prevent duplicate item id
     const isItemAlreadyAdded = (itemID: number, currentRowId: number) => {
         return rows.some(
             r => r.itemID === itemID && r.rowId !== currentRowId
         );
     };
 
+    // Populate row data when change item from dropdown
     const onItemChange = (rowId: number, itemID: number) => {
 
         // ✅ Duplicate check
@@ -396,14 +429,15 @@ const SalesOrders: React.FC = () => {
                         itemCode: selectedItem.itemCode,
                         itemName: selectedItem.itemName,
                         unitPrice: selectedItem.unitPrice,
-                        quantity: "1",
-                        discountPercent: "0"
+                        quantity: "1.00",
+                        discountPercent: "0.00"
                     }
                     : r
             )
         );
     };
 
+    // Change effect when change quantity
     const onQuantityChange = (rowId: number, value: string) => {
         setRows(prev =>
             prev.map(row =>
@@ -414,6 +448,7 @@ const SalesOrders: React.FC = () => {
         );
     };
 
+    // Change effect when change vat percentage 
     const onVatChange = (rowId: number, vatRateID: number) => {
         const vat = vatRates.find(v => v.id === vatRateID);
         const percent = vat ? Number(vat.name.match(/\d+/)?.[0]) : 0;
@@ -431,6 +466,7 @@ const SalesOrders: React.FC = () => {
         );
     };
 
+    // Change effect when change discount percent
     const onDiscountChange = (rowId: number, value: string) => {
         setRows(prev =>
             prev.map(row =>
@@ -441,7 +477,7 @@ const SalesOrders: React.FC = () => {
         );
     };
 
-
+    // Add new empty row below
     const addRowBelow = (rowId: number) => {
         setRows(prev => {
             const index = prev.findIndex(r => r.rowId === rowId);
@@ -452,12 +488,14 @@ const SalesOrders: React.FC = () => {
         });
     };
 
+    // Remove row from the sales order grid
     const removeRow = (rowId: number) => {
         if (rows.length === 1) return;
         setRows(prev => prev.filter(r => r.rowId !== rowId));
     };
 
-    const submitQuotation = async () => {
+    // Submit sales order information
+    const submitSalesOrder = async () => {
 
         if (
             rows.some(r =>
@@ -514,10 +552,6 @@ const SalesOrders: React.FC = () => {
         console.log(JSON.stringify(payload, null, 2));
 
         try {
-            // await axios.post(
-            //     "http://127.0.0.1:8000/api/salesorders/createSalesOrder",
-            //     payload
-            // );
 
             if (isEditMode) {
                 await axios.put(`http://127.0.0.1:8000/api/salesorders/updateSalesOrder/${salesOrderID}`, payload);
@@ -527,7 +561,7 @@ const SalesOrders: React.FC = () => {
                 toast.success("Sales Order saved successfully");
             }
 
-            navigate("/ViewSalesOrders");
+            // navigate("/ViewSalesOrders");
 
         } catch (error) {
             console.error("❌ Failed to save sales order", error);
@@ -971,10 +1005,10 @@ const SalesOrders: React.FC = () => {
             {/* Footer */}
             <div className="flex justify-end mt-4">
                 <button
-                    onClick={submitQuotation}
+                    onClick={submitSalesOrder}
                     className="bg-blue-500 text-white text-sm w-[90px] h-[32px] border-1 hover:bg-blue-700 transition-colors duration-200 cursor-pointer rounded"
                 >
-                    Submit
+                    {isEditMode ? "Update" : "Submit"}
                 </button>
             </div>
         </div>

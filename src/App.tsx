@@ -476,6 +476,15 @@ const App: React.FC = () => {
           />
 
           <Route
+            path="/SalesOrders/:id"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesOrders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/BalanceSheet"
             element={
               <ProtectedRoute permissionName="Accounts" actionName="Add Account">

@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { ChevronDown } from "lucide-react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import api from "@/utils/axios";
 
 
 interface SalesOrderDetail {
@@ -39,9 +41,7 @@ const ViewSalesOrders: React.FC = () => {
     const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
     const [salesOrderNo, setSalesOrderNo] = useState("");
     const totalPages = Math.ceil(total / pageSize);
-    const [searchParams] = useSearchParams();
-    const salesOrderID = searchParams.get("id");
-    const isEditMode = !!salesOrderID;
+
 
     const fetchSalesOrders = async () => {
         const res = await fetch(
@@ -69,27 +69,24 @@ const ViewSalesOrders: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target as Node)
-            ) {
-                setOpenDropdown(null);
-            }
+
+        const handleClickOutside = () => {
+            setOpenDropdown(null);
         };
 
-        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("click", handleClickOutside);
 
         return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("click", handleClickOutside);
         };
+
     }, []);
 
     const toggleDropdown = (id: number) => {
         setOpenDropdown(openDropdown === id ? null : id);
     };
 
-    
+
 
     const handleSelect = (salesOrderID: number) => {
         setSelectedSalesOrders((prev) =>
@@ -281,8 +278,8 @@ const ViewSalesOrders: React.FC = () => {
                                         <td className="w-[220px] p-2 border-b border-gray-400">
                                             {q.status}
                                         </td>
-                                        <td className="w-[50px] p-2 border-b border-gray-400 relative">
-                                            <div ref={dropdownRef} className="relative inline-block">
+                                        {/* <td className="w-[50px] p-2 border-b border-gray-400 relative">
+                                            <div ref={dropdownRef} onClick={(e) => e.stopPropagation()} className="relative inline-block">
                                                 <button
                                                     type="button"
                                                     className="flex items-center gap-2 text-[12px] text-blue-700 pr-2"
@@ -297,8 +294,9 @@ const ViewSalesOrders: React.FC = () => {
 
                                                 {openDropdown === q.salesOrderID && (
                                                     <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
-                                                            onClick={() => navigate(`/salesorders/create?id=${q.salesOrderID}`)}
+                                                        <button
+                                                            className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
+                                                            onClick={() => navigate(`/SalesOrders/${q.salesOrderID}`)}
                                                         >
                                                             Edit
                                                         </button>
@@ -320,46 +318,65 @@ const ViewSalesOrders: React.FC = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                        </td>
-
-                                        {/* <td className="w-[100px] p-2 border-b border-gray-400 relative cursor-pointer">
-                                            <div ref={dropdownRef}>
+                                        </td> */}
+                                        <td className="w-[50px] p-2 border-b border-gray-400 relative">
+                                            <div
+                                                ref={openDropdown === q.salesOrderID ? dropdownRef : null}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="relative inline-block"
+                                            >
                                                 <button
-                                                    className="relative flex items-center gap-1 text-[12px] text-blue-700 pr-6"
-                                                    onClick={() => toggleDropdown(q.salesOrderID)}
+                                                    type="button"
+                                                    className="flex items-center gap-2 text-[12px] text-blue-700 pr-2"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleDropdown(q.salesOrderID);
+                                                    }}
                                                 >
                                                     Actions
                                                     <ChevronDown
-                                                        className={`w-4 h-4 text-gray-500 transition-transform ${openDropdown === q.salesOrderID ? "rotate-180" : ""
+                                                        className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${openDropdown === q.salesOrderID ? "rotate-180" : ""
                                                             }`}
                                                     />
                                                 </button>
 
-
                                                 {openDropdown === q.salesOrderID && (
-                                                    <div className="absolute right-0 top-8 w-30 bg-white border border-blue-400 shadow rounded z-50">
-                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+                                                    <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
+
+                                                        <button
+                                                            className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
+                                                            onClick={() => {
+                                                                setOpenDropdown(null);
+                                                                navigate(`/SalesOrders/${q.salesOrderID}`);
+                                                            }}
+                                                        >
                                                             Edit
                                                         </button>
-                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
                                                             Edit Status
                                                         </button>
-                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
                                                             Print
                                                         </button>
-                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
                                                             View History
                                                         </button>
-                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
                                                             Create Invoice
                                                         </button>
-                                                        <button className="block w-full px-4 py-2 hover:bg-blue-200 text-left cursor-pointer">
+
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
                                                             Copy Order
                                                         </button>
+
                                                     </div>
                                                 )}
                                             </div>
-                                        </td> */}
+                                        </td>
                                     </tr>
 
                                     {/* ================= EXPANDED DETAIL ROW ================= */}

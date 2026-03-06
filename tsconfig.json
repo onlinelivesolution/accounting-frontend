@@ -1,5 +1,11 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -8,5 +14,10 @@
     "jsx": "react-jsx",
     "strict": true
   },
-  "include": ["src", "vite.config.ts", "useAuth.ts"]
+  "include": [
+    "src",
+    "vite.config.ts",
+    "useAuth.ts",
+    "axios.ts"
+  ]
 }
