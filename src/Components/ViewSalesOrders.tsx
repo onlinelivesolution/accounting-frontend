@@ -42,6 +42,10 @@ const ViewSalesOrders: React.FC = () => {
     const [salesOrderNo, setSalesOrderNo] = useState("");
     const totalPages = Math.ceil(total / pageSize);
 
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [status, setStatus] = useState("");
+
 
     const fetchSalesOrders = async () => {
         const res = await fetch(
@@ -86,7 +90,16 @@ const ViewSalesOrders: React.FC = () => {
         setOpenDropdown(openDropdown === id ? null : id);
     };
 
+    const openStatusModal = (order: any) => {
+        setSelectedOrder(order);
+        setStatus(order.status || "");
+        setIsStatusModalOpen(true);
+    };
 
+    const closeStatusModal = () => {
+        setIsStatusModalOpen(false);
+        setSelectedOrder(null);
+    };
 
     const handleSelect = (salesOrderID: number) => {
         setSelectedSalesOrders((prev) =>
@@ -148,6 +161,27 @@ const ViewSalesOrders: React.FC = () => {
                 ...prev,
                 [salesOrderID]: res.data.items
             }));
+        }
+    };
+
+    const updateStatus = async () => {
+        if (!selectedOrder) return;
+
+        try {
+
+            await api.put(`/api/salesorders/updateStatus/${selectedOrder.salesOrderID}`, {
+                status: status
+            });
+
+            toast.success("Status updated successfully");
+
+            closeStatusModal();
+
+            fetchSalesOrders(); // reload list
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to update status");
         }
     };
 
@@ -278,47 +312,7 @@ const ViewSalesOrders: React.FC = () => {
                                         <td className="w-[220px] p-2 border-b border-gray-400">
                                             {q.status}
                                         </td>
-                                        {/* <td className="w-[50px] p-2 border-b border-gray-400 relative">
-                                            <div ref={dropdownRef} onClick={(e) => e.stopPropagation()} className="relative inline-block">
-                                                <button
-                                                    type="button"
-                                                    className="flex items-center gap-2 text-[12px] text-blue-700 pr-2"
-                                                    onClick={() => toggleDropdown(q.salesOrderID)}
-                                                >
-                                                    Actions
-                                                    <ChevronDown
-                                                        className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${openDropdown === q.salesOrderID ? "" : ""
-                                                            }`}
-                                                    />
-                                                </button>
 
-                                                {openDropdown === q.salesOrderID && (
-                                                    <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
-                                                        <button
-                                                            className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
-                                                            onClick={() => navigate(`/SalesOrders/${q.salesOrderID}`)}
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                                                            Edit Status
-                                                        </button>
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                                                            Print
-                                                        </button>
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                                                            View History
-                                                        </button>
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                                                            Create Invoice
-                                                        </button>
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                                                            Copy Order
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td> */}
                                         <td className="w-[50px] p-2 border-b border-gray-400 relative">
                                             <div
                                                 ref={openDropdown === q.salesOrderID ? dropdownRef : null}
@@ -353,7 +347,9 @@ const ViewSalesOrders: React.FC = () => {
                                                             Edit
                                                         </button>
 
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                                                        <button
+                                                            onClick={() => openStatusModal(q)}
+                                                            className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
                                                             Edit Status
                                                         </button>
 
@@ -452,6 +448,55 @@ const ViewSalesOrders: React.FC = () => {
                     </div>
                 </div>
             </div>
+            {isStatusModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+
+                    <div className="bg-white p-4 rounded shadow w-[320px]">
+
+                        <h3 className="text-sm font-semibold mb-3">
+                            Update Sales Order Status
+                        </h3>
+
+                        <div className="mb-3">
+                            <label className="text-xs">Status</label>
+                            <div className="relative w-full">
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className="w-full border border-gray-400 rounded h-8 text-xs px-2 appearance-none"
+                                >
+                                    <option value="">Select Status</option>
+                                    <option value="Draft">Draft</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                    <option value="Closed">Closed</option>
+                                </select>
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+
+                            <button
+                                onClick={closeStatusModal}
+                                className="px-3 py-1 bg-gray-400 text-white text-xs rounded"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={updateStatus}
+                                className="px-3 py-1 bg-blue-600 text-white text-xs rounded"
+                            >
+                                Update
+                            </button>
+
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
