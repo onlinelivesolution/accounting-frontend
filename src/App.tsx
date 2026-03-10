@@ -248,7 +248,10 @@ const App: React.FC = () => {
       items.push({ name: "Add New Account", path: "/addNewAccount", category: "Accounts" });
       items.push({ name: "Bank Transaction", path: "/depositWithdraw", category: "Accounts" });
       items.push({ name: "Quotation", path: "/ViewQuotations", category: "Accounts" });
-      items.push({ name: "Sales Order", path: "/ViewSalesOrders", category: "Accounts" });
+      //items.push({ name: "Sales Order", path: "/ViewSalesOrders", category: "Accounts" });
+
+      items.push({ name: "Sales Order", path: "/sales-orders", category: "Accounts" });
+
       items.push({ name: "Balance Sheet", path: "/BalanceSheet", category: "Accounts" });
     }
 
@@ -458,6 +461,51 @@ const App: React.FC = () => {
           />
 
           <Route
+            path="/sales-orders"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <ViewSalesOrder />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sales-orders/new"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesOrders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sales-orders/:id/edit"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesOrders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sales-orders/:id/copy"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesOrders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sales-orders/:id/view"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <ViewSalesOrder />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* <Route
             path="/ViewSalesOrders"
             element={
               <ProtectedRoute permissionName="Accounts" actionName="Add Account">
@@ -482,7 +530,7 @@ const App: React.FC = () => {
                 <SalesOrders />
               </ProtectedRoute>
             }
-          />
+          /> */}
 
           <Route
             path="/BalanceSheet"

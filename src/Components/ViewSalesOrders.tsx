@@ -2,6 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import ConfirmModal from "@/Components/common/ConfirmModal";
+import ConfirmPopover from "@/Components/common/ConfirmPopover";
 import toast from "react-hot-toast";
 import api from "@/utils/axios";
 
@@ -27,7 +30,6 @@ interface SalesOrder {
 
 const ViewSalesOrders: React.FC = () => {
     const navigate = useNavigate();
-    const [selectedDetails, setSelectedDetails] = useState<number[]>([]);
     const [openDropdown, setOpenDropdown] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [selectedSalesOrders, setSelectedSalesOrders] = useState<number[]>([]);
@@ -41,12 +43,75 @@ const ViewSalesOrders: React.FC = () => {
     const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
     const [salesOrderNo, setSalesOrderNo] = useState("");
     const totalPages = Math.ceil(total / pageSize);
-
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [status, setStatus] = useState("");
 
+    const [confirmId, setConfirmId] = useState<number | null>(null);
 
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [copySalesOrderId, setCopySalesOrderId] = useState<number | null>(null);
+
+    const location = useLocation();
+    const highlightId = location.state?.highlightId ?? null;
+
+    // For use confirmation modal
+    // const handleCopyClick = (salesOrderID: number) => {
+    //     setCopySalesOrderId(salesOrderID);
+    //     setConfirmOpen(true);
+    // };
+
+    const handleConfirmCopy = async () => {
+
+        if (!copySalesOrderId) return;
+
+        try {
+
+            const res = await api.post(`/api/salesorders/${copySalesOrderId}/copy`);
+
+            const newId = res.data.salesOrderID;
+
+            setConfirmOpen(false);
+            setCopySalesOrderId(null);
+            setOpenDropdown(null);
+
+            navigate("/sales-orders", { state: { highlightId: newId } });
+            fetchSalesOrders();
+
+        } catch (error) {
+
+            console.error("Copy order failed", error);
+            alert("Failed to copy order");
+
+        }
+    };
+
+    const handleCancelCopy = () => {
+        setConfirmOpen(false);
+        setCopySalesOrderId(null);
+    };
+
+    const handleCopyOrder = async (salesOrderID: number) => {
+        try {
+
+            const res = await api.post(`/api/salesorders/${salesOrderID}/copy`);
+
+            const newId = res.data.salesOrderID;
+
+            setConfirmId(null);
+            setOpenDropdown(null);
+
+            // go to list screen and highlight new order
+            navigate("/sales-orders", { state: { highlightId: newId } });
+            fetchSalesOrders();
+        } catch (error) {
+            console.error("Copy order failed", error);
+            alert("Failed to copy order");
+            setConfirmId(null);
+        }
+    };
+
+    // Load sales orders in grid
     const fetchSalesOrders = async () => {
         const res = await fetch(
             `http://127.0.0.1:8000/api/salesorders/getSalesOrderFilters?filterType=${filterType}&salesOrderNo=${salesOrderNo}&page=${page}&pageSize=${pageSize}`
@@ -61,6 +126,7 @@ const ViewSalesOrders: React.FC = () => {
         fetchSalesOrders();
     }, [filterType, page]);
 
+    // Handle click outside grid dropdown to close
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -76,6 +142,7 @@ const ViewSalesOrders: React.FC = () => {
 
         const handleClickOutside = () => {
             setOpenDropdown(null);
+            setConfirmId(null);
         };
 
         document.addEventListener("click", handleClickOutside);
@@ -88,27 +155,33 @@ const ViewSalesOrders: React.FC = () => {
 
     const toggleDropdown = (id: number) => {
         setOpenDropdown(openDropdown === id ? null : id);
+        setConfirmId(null);
     };
 
+    // Open update status modal
     const openStatusModal = (order: any) => {
         setSelectedOrder(order);
         setStatus(order.status || "");
         setIsStatusModalOpen(true);
     };
 
+    // Close update status modal
     const closeStatusModal = () => {
         setIsStatusModalOpen(false);
         setSelectedOrder(null);
     };
 
-    const handleSelect = (salesOrderID: number) => {
+    // Handle individual child check boxes
+    const handleSelectIndividualCheckBox = (salesOrderID: number) => {
         setSelectedSalesOrders((prev) =>
             prev.includes(salesOrderID)
                 ? prev.filter((id) => id !== salesOrderID)
                 : [...prev, salesOrderID]
         );
     };
-    const handleSelectAll = () => {
+
+    // Handle parent check box
+    const handleSelectAllCheckBox = () => {
         setSelectAll(!selectAll);
         if (!selectAll) {
             setSelectedSalesOrders(salesOrders.map((qt) => qt.salesOrderID));
@@ -117,35 +190,7 @@ const ViewSalesOrders: React.FC = () => {
         }
     };
 
-
-    const handleParentCheckbox = (salesOrder: SalesOrder) => {
-        const allSelected = salesOrder.details.every(d =>
-            selectedDetails.includes(d.salesOrderDetailID)
-        );
-
-        if (allSelected) {
-            // Deselect all
-            setSelectedDetails(prev =>
-                prev.filter(id => !salesOrder.details.some(d => d.salesOrderDetailID === id))
-            );
-        } else {
-            // Select all
-            setSelectedDetails(prev => [
-                ...prev,
-                ...salesOrder.details
-                    .map(d => d.salesOrderDetailID)
-                    .filter(id => !prev.includes(id))
-            ]);
-        }
-    };
-
-    const handleChildCheckbox = (detailID: number, salesorder: SalesOrder) => {
-        setSelectedDetails((prev) =>
-            prev.includes(detailID)
-                ? prev.filter((id) => id !== detailID)
-                : [...prev, detailID]
-        );
-    };
+    // Expand sales order details
     const toggleSalesOrderExpand = async (salesOrderID: number) => {
         setExpandedRows(prev =>
             prev.includes(salesOrderID)
@@ -163,13 +208,13 @@ const ViewSalesOrders: React.FC = () => {
             }));
         }
     };
-
+    // Update sales order status
     const updateStatus = async () => {
         if (!selectedOrder) return;
 
         try {
 
-            await api.put(`/api/salesorders/updateStatus/${selectedOrder.salesOrderID}`, {
+            await api.put(`/api/salesorders/updateSalesOrderStatus/${selectedOrder.salesOrderID}`, {
                 status: status
             });
 
@@ -242,7 +287,7 @@ const ViewSalesOrders: React.FC = () => {
                     </div>
 
                     <button
-                        onClick={() => navigate("/SalesOrders")}
+                        onClick={() => navigate("/sales-orders/new")}
                         className="min-w-[100px] h-[28px] bg-[#1c3c61] text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
 
                     >
@@ -262,7 +307,7 @@ const ViewSalesOrders: React.FC = () => {
                                         type="checkbox"
                                         className="w-4 h-4 accent-[#1a4e8a] ml-[-20px] cursor-pointer p-2"
                                         checked={selectAll}
-                                        onChange={handleSelectAll}
+                                        onChange={handleSelectAllCheckBox}
                                     />
                                 </th>
 
@@ -275,47 +320,47 @@ const ViewSalesOrders: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {salesOrders.map(q => (
-                                <React.Fragment key={q.salesOrderID}>
+                            {salesOrders.map(so => (
+                                <React.Fragment key={so.salesOrderID}>
                                     {/* ================= SUMMARY ROW ================= */}
-                                    <tr>
+                                    <tr key={so.salesOrderID} className={so.salesOrderID === highlightId ? "bg-green-200 font-semibold" : ""}>
                                         <td className="w-[50px] py-2 px-2 text-center border-b border-gray-400 border-l border-[#1c3c61]">
                                             <div className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     className="w-4 h-4 accent-[#1c3c61] cursor-pointer"
-                                                    checked={selectedSalesOrders.includes(q.salesOrderID)}
-                                                    onChange={() => handleSelect(q.salesOrderID)}
+                                                    checked={selectedSalesOrders.includes(so.salesOrderID)}
+                                                    onChange={() => handleSelectIndividualCheckBox(so.salesOrderID)}
                                                 />
 
                                                 <button
                                                     className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#1c3c61] rounded hover:bg-[#161f4d] cursor-pointer"
-                                                    onClick={() => toggleSalesOrderExpand(q.salesOrderID)}
+                                                    onClick={() => toggleSalesOrderExpand(so.salesOrderID)}
                                                 >
-                                                    {expandedRows.includes(q.salesOrderID) ? "−" : "+"}
+                                                    {expandedRows.includes(so.salesOrderID) ? "−" : "+"}
                                                 </button>
                                             </div>
                                         </td>
 
                                         <td className="w-[220px] p-2 border-b border-gray-400">
-                                            {q.customerName}
+                                            {so.customerName}
                                         </td>
                                         <td className="w-[220px] p-2 border-b border-gray-400">
-                                            {q.salesOrderNo}
+                                            {so.salesOrderNo}
                                         </td>
                                         <td className="w-[220px] p-2 border-b border-gray-400">
-                                            {q.salesOrderDate}
+                                            {so.salesOrderDate}
                                         </td>
                                         <td className="w-[220px] p-2 border-b border-gray-400">
-                                            {q.totalAmount.toFixed(2)}
+                                            {so.totalAmount.toFixed(2)}
                                         </td>
                                         <td className="w-[220px] p-2 border-b border-gray-400">
-                                            {q.status}
+                                            {so.status}
                                         </td>
 
                                         <td className="w-[50px] p-2 border-b border-gray-400 relative">
                                             <div
-                                                ref={openDropdown === q.salesOrderID ? dropdownRef : null}
+                                                ref={openDropdown === so.salesOrderID ? dropdownRef : null}
                                                 onClick={(e) => e.stopPropagation()}
                                                 className="relative inline-block"
                                             >
@@ -324,31 +369,31 @@ const ViewSalesOrders: React.FC = () => {
                                                     className="flex items-center gap-2 text-[12px] text-blue-700 pr-2"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        toggleDropdown(q.salesOrderID);
+                                                        toggleDropdown(so.salesOrderID);
                                                     }}
                                                 >
                                                     Actions
                                                     <ChevronDown
-                                                        className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${openDropdown === q.salesOrderID ? "rotate-180" : ""
+                                                        className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${openDropdown === so.salesOrderID ? "rotate-180" : ""
                                                             }`}
                                                     />
                                                 </button>
 
-                                                {openDropdown === q.salesOrderID && (
+                                                {openDropdown === so.salesOrderID && (
                                                     <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
 
                                                         <button
                                                             className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
                                                             onClick={() => {
                                                                 setOpenDropdown(null);
-                                                                navigate(`/SalesOrders/${q.salesOrderID}`);
+                                                                navigate(`/sales-orders/${so.salesOrderID}/edit`);
                                                             }}
                                                         >
                                                             Edit
                                                         </button>
 
                                                         <button
-                                                            onClick={() => openStatusModal(q)}
+                                                            onClick={() => openStatusModal(so)}
                                                             className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
                                                             Edit Status
                                                         </button>
@@ -357,7 +402,12 @@ const ViewSalesOrders: React.FC = () => {
                                                             Print
                                                         </button>
 
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
+                                                            onClick={() => {
+                                                                setOpenDropdown(null);
+                                                                navigate(`/sales-orders/${so.salesOrderID}/view`);
+                                                            }}
+                                                        >
                                                             View History
                                                         </button>
 
@@ -365,10 +415,20 @@ const ViewSalesOrders: React.FC = () => {
                                                             Create Invoice
                                                         </button>
 
-                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                                                        <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
+                                                            onClick={() => setConfirmId(so.salesOrderID)}
+                                                        >
                                                             Copy Order
                                                         </button>
-
+                                                        <ConfirmPopover
+                                                            isOpen={confirmId === so.salesOrderID}
+                                                            message="Create the same another sales order?"
+                                                            onConfirm={() => handleCopyOrder(so.salesOrderID)}
+                                                            onCancel={() => {
+                                                                setConfirmId(null);
+                                                                setOpenDropdown(null);
+                                                            }}
+                                                        />
                                                     </div>
                                                 )}
                                             </div>
@@ -376,7 +436,7 @@ const ViewSalesOrders: React.FC = () => {
                                     </tr>
 
                                     {/* ================= EXPANDED DETAIL ROW ================= */}
-                                    {expandedRows.includes(q.salesOrderID) && (
+                                    {expandedRows.includes(so.salesOrderID) && (
                                         <tr className="">
                                             <td colSpan={7} className="bg-gray-50 p-3">
                                                 <table className="w-full text-xs border border-gray-400">
@@ -391,7 +451,7 @@ const ViewSalesOrders: React.FC = () => {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {(details[q.salesOrderID] || []).map((d, i) => (
+                                                        {(details[so.salesOrderID] || []).map((d, i) => (
                                                             <tr key={i}>
                                                                 <td className="w-[220px] p-2 border-b border-gray-400">
                                                                     {d.itemDescription}
@@ -422,6 +482,16 @@ const ViewSalesOrders: React.FC = () => {
                             ))}
                         </tbody>
                     </table>
+                    {/* Confirm Modal */}
+                    <ConfirmModal
+                        isOpen={confirmOpen}
+                        title="Copy Sales Order"
+                        message="Do you want to create the same sales order?"
+                        confirmText="Yes"
+                        cancelText="No"
+                        onConfirm={handleConfirmCopy}
+                        onCancel={handleCancelCopy}
+                    />
                 </div>
                 <div className="col-span-6 flex gap-2 mt-2">
                     <button

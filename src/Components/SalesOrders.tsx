@@ -5,8 +5,8 @@ import DatePicker from "react-datepicker";
 import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
-import { useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import api from "@/utils/axios";
 
 interface VatRate {
@@ -153,10 +153,18 @@ const SalesOrders: React.FC = () => {
     const [totalAmount, setTotalAmount] = useState(0);
 
     const { id } = useParams();
-    const isEditMode = !!id;
+    const location = useLocation();
+    const highlightId = location.state?.highlightId ?? null;
+    const isEditMode = location.pathname.includes("/edit");
+    const isCopyMode = location.pathname.includes("/copy");
+    const isCreateMode = location.pathname.includes("/new");
+
     const salesOrderID = Number(id);
 
+    const [searchParams] = useSearchParams();
+    const copyId = searchParams.get("copyId");
 
+    const [details, setDetails] = useState<SalesOrderDetail[]>([]);
 
     useEffect(() => {
         if (!id || customers.length === 0) return;
@@ -366,6 +374,43 @@ const SalesOrders: React.FC = () => {
     }, [quotationID]);
 
 
+    useEffect(() => {
+
+        if (!isEditMode) return;
+
+        loadSalesOrderForCopy();
+
+    }, [id]);
+
+    const loadSalesOrderForCopy = async () => {
+        try {
+
+            const res = await api.get(`/api/salesorders/${id}`);
+
+            console.log("SalesOrder Data:", res.data);
+
+            // set customer
+            const customer = customers.find(
+                c => c.customerID === res.data.customerID
+            );
+
+            setSelectedCustomer(customer ?? null);
+
+            // set header fields
+            setSalesOrderDate(res.data.orderDate);
+            setReferenceNo(res.data.referenceNo);
+            setRemarks(res.data.description);
+
+            // set detail rows
+            setDetails(res.data.details || []);
+
+        } catch (error) {
+            console.error("Load error:", error);
+        }
+    };
+
+
+
     // Calculate row data and total information in the controls 
     const recalculateRow = (row: SalesOrderRow): SalesOrderRow => {
         const quantityNumber = parseFloat(row.quantity) || 0;
@@ -568,6 +613,7 @@ const SalesOrders: React.FC = () => {
             toast.error("Failed to save sales order");
         }
     };
+
 
     const totalVat = rows.reduce(
         (sum, r) => sum + (r.vatAmount || 0),
