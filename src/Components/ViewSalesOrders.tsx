@@ -54,6 +54,7 @@ const ViewSalesOrders: React.FC = () => {
 
     const location = useLocation();
     const highlightId = location.state?.highlightId ?? null;
+    const rowRefs = useRef<{ [key: number]: HTMLTableRowElement | null }>({});
 
     // For use confirmation modal
     // const handleCopyClick = (salesOrderID: number) => {
@@ -100,7 +101,7 @@ const ViewSalesOrders: React.FC = () => {
 
             setConfirmId(null);
             setOpenDropdown(null);
-
+            toast.success("Sales Order copied successfully");
             // go to list screen and highlight new order
             navigate("/sales-orders", { state: { highlightId: newId } });
             fetchSalesOrders();
@@ -125,6 +126,55 @@ const ViewSalesOrders: React.FC = () => {
     useEffect(() => {
         fetchSalesOrders();
     }, [filterType, page]);
+
+    // Highlight animation
+    useEffect(() => {
+
+        if (!highlightId) return;
+
+        const row = rowRefs.current[highlightId];
+
+        if (row) {
+
+            row.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+        }
+
+    }, [highlightId]);
+
+    // Keyboard shortcuts
+    useEffect(() => {
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+
+            // Ctrl + N → Create New Sales Order
+            if (e.altKey && e.key.toLowerCase() === "n") {
+
+                e.preventDefault();
+                navigate("/sales-orders/new");
+
+            }
+
+            // ESC → close dropdown
+            if (e.key === "Escape") {
+
+                setOpenDropdown(null);
+                setConfirmId(null);
+
+            }
+
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+
+    }, []);
 
     // Handle click outside grid dropdown to close
     useEffect(() => {
@@ -323,7 +373,12 @@ const ViewSalesOrders: React.FC = () => {
                             {salesOrders.map(so => (
                                 <React.Fragment key={so.salesOrderID}>
                                     {/* ================= SUMMARY ROW ================= */}
-                                    <tr key={so.salesOrderID} className={so.salesOrderID === highlightId ? "bg-green-200 font-semibold" : ""}>
+                                    {/* <tr key={so.salesOrderID} className={so.salesOrderID === highlightId ? "bg-green-200 font-semibold" : ""}> */}
+                                    <tr
+                                        ref={(el) => (rowRefs.current[so.salesOrderID] = el)}
+                                        key={so.salesOrderID}
+                                        className={`border-b border-gray-300 transition-all duration-700 ${highlightId === so.salesOrderID ? "bg-green-200 animate-pulse" : ""}`}
+                                    >
                                         <td className="w-[50px] py-2 px-2 text-center border-b border-gray-400 border-l border-[#1c3c61]">
                                             <div className="flex items-center gap-2">
                                                 <input
