@@ -1,21 +1,120 @@
 import React, { useState, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
+import Select from "react-select";
 import api from "@/utils/axios";
 
-interface RuleDetail {
-    accountCode: string;
+export interface AccountingRow {
+    rowId: number;
+    accountItemCode: string;
     entryType: string;
     amountSource: string;
 }
+
+const emptyRow = (id: number): AccountingRow => ({
+    rowId: id,
+    accountItemCode: "",
+    entryType: "",
+    amountSource: ""
+});
+
+interface DetailItemOption {
+    detailItemCode: string;
+    detailItemName: string;
+    reportingItemName: string;
+}
+
+interface DropdownProps {
+    value?: string | null;
+    options: DetailItemOption[];
+    onChange: (value: string | null) => void;
+    placeholder: string;
+}
+
+const DetailItemDropdown: React.FC<DropdownProps> = ({
+    value,
+    options,
+    onChange,
+    placeholder
+}) => {
+    const groupedOptions = Object.values(
+        options.reduce((acc: any, item) => {
+            if (!acc[item.reportingItemName]) {
+                acc[item.reportingItemName] = { label: item.reportingItemName, options: [] };
+            }
+            acc[item.reportingItemName].options.push({
+                value: item.detailItemCode,
+                label: `${item.detailItemCode} - ${item.detailItemName}`
+            });
+            return acc;
+        }, {})
+    );
+
+    const selectedOption =
+        groupedOptions.flatMap(g => g.options).find(o => o.value === value) || null;
+
+    return (
+        <Select
+            options={groupedOptions}
+            value={
+                groupedOptions
+                    .flatMap(g => g.options)
+                    .find(o => o.value === value) || null
+            }
+            onChange={(e) => onChange(e?.value || "")}
+            placeholder={placeholder}
+            isSearchable
+            styles={customSelectStyles}
+            className="text-sm"
+        />
+    );
+};
+const customSelectStyles = {
+    control: (base: any, state: any) => ({
+        ...base,
+        minHeight: "30px",
+        borderColor: state.isFocused ? "#0a0f18ff" : "#9ca3af", // blue / gray
+        boxShadow: state.isFocused ? "0 0 0 1px #1c1f24ff" : "none",
+        "&:hover": {
+            borderColor: "#0c1320ff"
+        },
+        fontSize: "0.875rem"
+    }),
+
+    option: (base: any, state: any) => ({
+        ...base,
+        backgroundColor: state.isSelected
+            ? "#2563eb"
+            : state.isFocused
+                ? "#dbeafe"
+                : "white",
+        color: state.isSelected ? "white" : "#111827",
+        fontSize: "0.875rem",
+        cursor: "pointer"
+    }),
+
+    singleValue: (base: any) => ({
+        ...base,
+        color: "#111827" // selected text color
+    }),
+
+    placeholder: (base: any) => ({
+        ...base,
+        color: "#6b7280" // placeholder color
+    }),
+
+    menu: (base: any) => ({
+        ...base,
+        zIndex: 9999
+    })
+};
 
 const AccountingRuleSettings = () => {
 
     const [ruleCode, setRuleCode] = useState("");
     const [moduleName, setModuleName] = useState("");
     const [description, setDescription] = useState("");
-
-    const [details, setDetails] = useState<RuleDetail[]>([
-        { accountCode: "", entryType: "DEBIT", amountSource: "" }
-    ]);
+    const [rows, setRows] = useState<AccountingRow[]>([emptyRow(1)]);
+    const [detailAccounts, setDetailAccounts] = useState<DetailItemOption[]>([]);
 
     const [accounts, setAccounts] = useState<any[]>([]);
 
@@ -24,41 +123,55 @@ const AccountingRuleSettings = () => {
     }, []);
 
     const loadAccounts = async () => {
-        const res = await api.get("/api/chartofaccounts");
-        setAccounts(res.data);
+        try {
+            const res = await api.get("/api/common/loadDetailItems"
+            );
+            setAccounts(res.data);
+        } catch (error) {
+            console.error("Error loading accounts:", error);
+        }
     };
 
-    const addRow = () => {
-        setDetails([
-            ...details,
-            { accountCode: "", entryType: "DEBIT", amountSource: "" }
-        ]);
+    const addRowBelow = (rowId: number) => {
+        setRows(prev => {
+            const index = prev.findIndex(r => r.rowId === rowId);
+            const newRow = emptyRow(Date.now());
+            const updated = [...prev];
+            updated.splice(index + 1, 0, newRow);
+            return updated;
+        });
     };
 
-    const removeRow = (index: number) => {
-        const rows = [...details];
-        rows.splice(index, 1);
-        setDetails(rows);
+    const removeRows = (rowId: number) => {
+        if (rows.length === 1) return;
+        setRows(prev => prev.filter(r => r.rowId !== rowId));
     };
 
-    const handleChange = (
-        index: number,
-        field: keyof RuleDetail,
-        value: string
-    ) => {
+    const updateRow = (id: number, field: keyof AccountingRow, value: any) => {
+        setRows(prev =>
+            prev.map(r => {
+                if (r.rowId !== id) return r;
 
-        const rows = [...details];
-        rows[index][field] = value;
-        setDetails(rows);
+                const updated = { ...r, [field]: value };
+
+                return {
+                    ...updated,
+
+                };
+            })
+        );
     };
+
+
+
 
     const saveRule = async () => {
 
         const payload = {
             ruleCode,
             moduleName,
-            description,
-            details
+            description
+
         };
 
         await api.post("/api/accounting-rules", payload);
@@ -75,123 +188,136 @@ const AccountingRuleSettings = () => {
 
             {/* Header Section */}
 
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-6 gap-4 mb-4">
 
                 <input
                     placeholder="Rule Code"
                     value={ruleCode}
                     onChange={(e) => setRuleCode(e.target.value)}
-                    className="border p-2 rounded"
+                    className="border border-gray-400 px-2 h-8 rounded text-sm col-span-2"
                 />
 
                 <input
                     placeholder="Module Name"
                     value={moduleName}
                     onChange={(e) => setModuleName(e.target.value)}
-                    className="border p-2 rounded"
+                    className="border border-gray-400 px-2 h-8 rounded text-sm col-span-2"
                 />
 
                 <input
                     placeholder="Description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="border p-2 rounded"
+                    className="border border-gray-400 px-2 h-8 rounded text-sm col-span-2"
                 />
 
             </div>
 
             {/* Rule Detail Table */}
 
-            <table className="w-full border">
+            <table className="w-full border border-gray-400 rounded rounded-lg text-sm">
 
-                <thead className="bg-gray-100">
+                <thead className="bg-blue-200">
 
                     <tr>
-                        <th className="border p-2">Account</th>
-                        <th className="border p-2">Entry Type</th>
-                        <th className="border p-2">Amount Source</th>
-                        <th className="border p-2">Action</th>
+                        <th className="p-2 text-left">Account</th>
+                        <th className="p-2 text-left">Entry Type</th>
+                        <th className="p-2 text-left">Amount Source</th>
+                        <th className="p-2 w-20 text-center">Action</th>
                     </tr>
 
                 </thead>
 
                 <tbody>
 
-                    {details.map((row, index) => (
+                    {rows.map(row => (
 
-                        <tr key={index}>
+                        <tr key={row.rowId}>
 
-                            <td className="border p-2">
+                            <td className="p-1 w-60">
+                                <div className="relative w-full">
+                                    <select
+                                        options={detailAccounts}
+                                        value={row.accountItemCode}
+                                        onChange={v => updateRow(row.rowId, "accountItemCode", v)}
+                                        className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
+                                    >
 
-                                <select
-                                    value={row.accountCode}
-                                    onChange={(e) =>
-                                        handleChange(index, "accountCode", e.target.value)
-                                    }
-                                    className="w-full border p-1"
-                                >
+                                        <option value="">Select Account</option>
 
-                                    <option value="">Select Account</option>
+                                        {accounts.map((acc) => (
+                                            <option
+                                                key={acc.debitItemCode}
+                                                value={acc.debitItemCode}
+                                            >
+                                                {acc.debitItemCode} - {acc.detailItemName}
+                                            </option>
+                                        ))}
 
-                                    {accounts.map((acc) => (
-                                        <option
-                                            key={acc.accountCode}
-                                            value={acc.accountCode}
-                                        >
-                                            {acc.accountCode} - {acc.accountName}
-                                        </option>
-                                    ))}
-
-                                </select>
-
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                                    />
+                                </div>
                             </td>
 
-                            <td className="border p-2">
+                            <td className="p-1 w-60">
+                                <div className="relative w-full">
+                                    <select
+                                        options={entryType}
+                                        value={row.entryType}
+                                        onChange={v => updateRow(row.rowId, "entryType", v)}
+                                        className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
+                                    >
 
-                                <select
-                                    value={row.entryType}
-                                    onChange={(e) =>
-                                        handleChange(index, "entryType", e.target.value)
-                                    }
-                                    className="w-full border p-1"
-                                >
+                                        <option value="DEBIT">DEBIT</option>
+                                        <option value="CREDIT">CREDIT</option>
 
-                                    <option value="DEBIT">DEBIT</option>
-                                    <option value="CREDIT">CREDIT</option>
-
-                                </select>
-
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                                    />
+                                </div>
                             </td>
 
-                            <td className="border p-2">
+                            <td className="p-1 w-60">
+                                <div className="relative w-full">
+                                    <select
+                                        value={row.amountSource}
+                                        onChange={v => updateRow(row.rowId, "amountSource", v)}
+                                        className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
+                                    >
+                                        <option value="">Select Field</option>
+                                        <option value="exclusiveAmount">Exclusive Amount</option>
+                                        <option value="vatAmount">VAT Amount</option>
+                                        <option value="discountAmount">Discount</option>
+                                        <option value="totalAmount">Total Amount</option>
 
-                                <select
-                                    value={row.amountSource}
-                                    onChange={(e) =>
-                                        handleChange(index, "amountSource", e.target.value)
-                                    }
-                                    className="w-full border p-1"
-                                >
-
-                                    <option value="">Select Field</option>
-                                    <option value="exclusiveAmount">Exclusive Amount</option>
-                                    <option value="vatAmount">VAT Amount</option>
-                                    <option value="discountAmount">Discount</option>
-                                    <option value="totalAmount">Total Amount</option>
-
-                                </select>
-
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                                    />
+                                </div>
                             </td>
 
-                            <td className="border p-2 text-center">
-
-                                <button
-                                    onClick={() => removeRow(index)}
-                                    className="bg-red-500 text-white px-2 py-1 rounded"
-                                >
-                                    Delete
-                                </button>
-
+                            <td className="p-1 text-center">
+                                <div className="flex justify-center gap-2">
+                                    <button
+                                        onClick={() => addRowBelow(row.rowId)}
+                                        className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-700"
+                                        title="Add row below"
+                                    >
+                                        A
+                                    </button>
+                                    <button
+                                        onClick={() => removeRows(row.rowId)}
+                                        className={`px-2 py-1 rounded text-white ${rows.length === 1
+                                            ? "bg-gray-300 cursor-not-allowed"
+                                            : "bg-red-500 hover:bg-red-600"
+                                            }`}
+                                        disabled={rows.length === 1}
+                                        title="Delete row"
+                                    >
+                                        D
+                                    </button>
+                                </div>
                             </td>
 
                         </tr>
@@ -204,12 +330,7 @@ const AccountingRuleSettings = () => {
 
             <div className="mt-4 flex gap-3">
 
-                <button
-                    onClick={addRow}
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                    Add Row
-                </button>
+
 
                 <button
                     onClick={saveRule}

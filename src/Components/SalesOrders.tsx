@@ -164,7 +164,7 @@ const SalesOrders: React.FC = () => {
     const [searchParams] = useSearchParams();
     const copyId = searchParams.get("copyId");
 
-    const [details, setDetails] = useState<SalesOrderDetail[]>([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (!id || customers.length === 0) return;
@@ -373,44 +373,6 @@ const SalesOrders: React.FC = () => {
             });
     }, [quotationID]);
 
-
-    useEffect(() => {
-
-        if (!isEditMode) return;
-
-        loadSalesOrderForCopy();
-
-    }, [id]);
-
-    const loadSalesOrderForCopy = async () => {
-        try {
-
-            const res = await api.get(`/api/salesorders/${id}`);
-
-            console.log("SalesOrder Data:", res.data);
-
-            // set customer
-            const customer = customers.find(
-                c => c.customerID === res.data.customerID
-            );
-
-            setSelectedCustomer(customer ?? null);
-
-            // set header fields
-            setSalesOrderDate(res.data.orderDate);
-            setReferenceNo(res.data.referenceNo);
-            setRemarks(res.data.description);
-
-            // set detail rows
-            setDetails(res.data.details || []);
-
-        } catch (error) {
-            console.error("Load error:", error);
-        }
-    };
-
-
-
     // Calculate row data and total information in the controls 
     const recalculateRow = (row: SalesOrderRow): SalesOrderRow => {
         const quantityNumber = parseFloat(row.quantity) || 0;
@@ -598,19 +560,35 @@ const SalesOrders: React.FC = () => {
 
         try {
 
+            let res;
+
             if (isEditMode) {
-                await axios.put(`http://127.0.0.1:8000/api/salesorders/updateSalesOrder/${salesOrderID}`, payload);
+
+                res = await api.put(`/api/salesorders/updateSalesOrder/${salesOrderID}`, payload);
+
                 toast.success("Sales Order updated successfully");
+
             } else {
-                await axios.post("http://127.0.0.1:8000/api/salesorders/createSalesOrder", payload);
+
+                res = await api.post("/api/salesorders/createSalesOrder", payload);
+
                 toast.success("Sales Order saved successfully");
+
             }
 
-            // navigate("/ViewSalesOrders");
+            // get SalesOrderID (works for create & update)
+            const newSalesOrderID = res.data.salesOrderID ?? salesOrderID;
+
+            navigate("/sales-orders", {
+                state: { highlightId: newSalesOrderID }
+            });
 
         } catch (error) {
+
             console.error("❌ Failed to save sales order", error);
+
             toast.error("Failed to save sales order");
+
         }
     };
 
