@@ -18,6 +18,7 @@ import ViewQuotation from "./Components/ViewQuotations";
 import Quotations from "./Components/Quotations";
 import ViewSalesOrder from "./Components/ViewSalesOrders";
 import SalesOrders from "./Components/SalesOrders";
+import AccountingRuleSettings from "./Components/AccountingRulSettings";
 import AddNewAccount from "./Components/AddNewAccount";
 import Employee from "./Components/Employees";
 import GenerateSalaries from "./Components/GenerateSalary";
@@ -251,6 +252,7 @@ const App: React.FC = () => {
       //items.push({ name: "Sales Order", path: "/ViewSalesOrders", category: "Accounts" });
 
       items.push({ name: "Sales Order", path: "/sales-orders", category: "Accounts" });
+      items.push({ name: "Accounting Setting", path: "/accounting-settings", category: "Accounts" });
 
       items.push({ name: "Balance Sheet", path: "/BalanceSheet", category: "Accounts" });
     }
@@ -505,32 +507,14 @@ const App: React.FC = () => {
             }
           />
 
-          {/* <Route
-            path="/ViewSalesOrders"
+          <Route
+            path="/accounting-settings"
             element={
               <ProtectedRoute permissionName="Accounts" actionName="Add Account">
-                <ViewSalesOrder />
+                <AccountingRuleSettings />
               </ProtectedRoute>
             }
           />
-
-          <Route
-            path="/SalesOrders"
-            element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
-                <SalesOrders />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/SalesOrders/:id"
-            element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
-                <SalesOrders />
-              </ProtectedRoute>
-            }
-          /> */}
 
           <Route
             path="/BalanceSheet"
