@@ -1,112 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import Select from "react-select";
 import api from "@/utils/axios";
 
 export interface AccountingRow {
     rowId: number;
-    accountItemCode: string;
+    accountCode: string;
     entryType: string;
     amountSource: string;
 }
 
 const emptyRow = (id: number): AccountingRow => ({
     rowId: id,
-    accountItemCode: "",
+    accountCode: "",
     entryType: "",
     amountSource: ""
 });
-
-interface DetailItemOption {
-    detailItemCode: string;
-    detailItemName: string;
-    reportingItemName: string;
-}
-
-interface DropdownProps {
-    value?: string | null;
-    options: DetailItemOption[];
-    onChange: (value: string | null) => void;
-    placeholder: string;
-}
-
-const DetailItemDropdown: React.FC<DropdownProps> = ({
-    value,
-    options,
-    onChange,
-    placeholder
-}) => {
-    const groupedOptions = Object.values(
-        options.reduce((acc: any, item) => {
-            if (!acc[item.reportingItemName]) {
-                acc[item.reportingItemName] = { label: item.reportingItemName, options: [] };
-            }
-            acc[item.reportingItemName].options.push({
-                value: item.detailItemCode,
-                label: `${item.detailItemCode} - ${item.detailItemName}`
-            });
-            return acc;
-        }, {})
-    );
-
-    const selectedOption =
-        groupedOptions.flatMap(g => g.options).find(o => o.value === value) || null;
-
-    return (
-        <Select
-            options={groupedOptions}
-            value={
-                groupedOptions
-                    .flatMap(g => g.options)
-                    .find(o => o.value === value) || null
-            }
-            onChange={(e) => onChange(e?.value || "")}
-            placeholder={placeholder}
-            isSearchable
-            styles={customSelectStyles}
-            className="text-sm"
-        />
-    );
-};
-const customSelectStyles = {
-    control: (base: any, state: any) => ({
-        ...base,
-        minHeight: "30px",
-        borderColor: state.isFocused ? "#0a0f18ff" : "#9ca3af", // blue / gray
-        boxShadow: state.isFocused ? "0 0 0 1px #1c1f24ff" : "none",
-        "&:hover": {
-            borderColor: "#0c1320ff"
-        },
-        fontSize: "0.875rem"
-    }),
-
-    option: (base: any, state: any) => ({
-        ...base,
-        backgroundColor: state.isSelected
-            ? "#2563eb"
-            : state.isFocused
-                ? "#dbeafe"
-                : "white",
-        color: state.isSelected ? "white" : "#111827",
-        fontSize: "0.875rem",
-        cursor: "pointer"
-    }),
-
-    singleValue: (base: any) => ({
-        ...base,
-        color: "#111827" // selected text color
-    }),
-
-    placeholder: (base: any) => ({
-        ...base,
-        color: "#6b7280" // placeholder color
-    }),
-
-    menu: (base: any) => ({
-        ...base,
-        zIndex: 9999
-    })
-};
 
 const AccountingRuleSettings = () => {
 
@@ -114,8 +22,6 @@ const AccountingRuleSettings = () => {
     const [moduleName, setModuleName] = useState("");
     const [description, setDescription] = useState("");
     const [rows, setRows] = useState<AccountingRow[]>([emptyRow(1)]);
-    const [detailAccounts, setDetailAccounts] = useState<DetailItemOption[]>([]);
-
     const [accounts, setAccounts] = useState<any[]>([]);
 
     useEffect(() => {
@@ -165,16 +71,16 @@ const AccountingRuleSettings = () => {
 
 
 
-    const saveRule = async () => {
+    const submitAccountingRule = async () => {
 
         const payload = {
             ruleCode,
             moduleName,
-            description
-
+            description,
+            details: rows
         };
 
-        await api.post("/api/accounting-rules", payload);
+        await api.post("/api/accounting-rules/createAccountingRule", payload);
 
         alert("Accounting rule saved successfully");
     };
@@ -216,30 +122,25 @@ const AccountingRuleSettings = () => {
             {/* Rule Detail Table */}
 
             <table className="w-full border border-gray-400 rounded rounded-lg text-sm">
-
-                <thead className="bg-blue-200">
-
+                <thead className="bg-[#1c3c61] rounded rounded-lg">
                     <tr>
-                        <th className="p-2 text-left">Account</th>
-                        <th className="p-2 text-left">Entry Type</th>
-                        <th className="p-2 text-left">Amount Source</th>
-                        <th className="p-2 w-20 text-center">Action</th>
+                        <th className="p-2 text-left text-white">Account</th>
+                        <th className="p-2 text-left text-white">Entry Type</th>
+                        <th className="p-2 text-left text-white">Amount Source</th>
+                        <th className="p-2 w-20 text-center text-white">Action</th>
                     </tr>
-
                 </thead>
 
                 <tbody>
-
                     {rows.map(row => (
-
                         <tr key={row.rowId}>
-
                             <td className="p-1 w-60">
                                 <div className="relative w-full">
                                     <select
-                                        options={detailAccounts}
-                                        value={row.accountItemCode}
-                                        onChange={v => updateRow(row.rowId, "accountItemCode", v)}
+                                        value={row.accountCode}
+                                        onChange={(e) =>
+                                            updateRow(row.rowId, "accountCode", e.target.value)
+                                        }
                                         className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
                                     >
 
@@ -247,10 +148,10 @@ const AccountingRuleSettings = () => {
 
                                         {accounts.map((acc) => (
                                             <option
-                                                key={acc.debitItemCode}
-                                                value={acc.debitItemCode}
+                                                key={acc.detailItemCode}
+                                                value={acc.detailItemCode}
                                             >
-                                                {acc.debitItemCode} - {acc.detailItemName}
+                                                {acc.detailItemCode} - {acc.detailItemName}
                                             </option>
                                         ))}
 
@@ -263,9 +164,10 @@ const AccountingRuleSettings = () => {
                             <td className="p-1 w-60">
                                 <div className="relative w-full">
                                     <select
-                                        options={entryType}
                                         value={row.entryType}
-                                        onChange={v => updateRow(row.rowId, "entryType", v)}
+                                        onChange={(e) =>
+                                            updateRow(row.rowId, "entryType", e.target.value)
+                                        }
                                         className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
                                     >
 
@@ -282,7 +184,9 @@ const AccountingRuleSettings = () => {
                                 <div className="relative w-full">
                                     <select
                                         value={row.amountSource}
-                                        onChange={v => updateRow(row.rowId, "amountSource", v)}
+                                        onChange={(e) =>
+                                            updateRow(row.rowId, "amountSource", e.target.value)
+                                        }
                                         className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
                                     >
                                         <option value="">Select Field</option>
@@ -328,15 +232,12 @@ const AccountingRuleSettings = () => {
 
             </table>
 
-            <div className="mt-4 flex gap-3">
-
-
-
+            <div className="mt-5 flex gap-3 justify-end">
                 <button
-                    onClick={saveRule}
-                    className="bg-green-600 text-white px-4 py-2 rounded"
+                    onClick={submitAccountingRule}
+                    className="bg-green-600 h-8 text-white px-3 py-1 rounded"
                 >
-                    Save Rule
+                    Submit
                 </button>
 
             </div>
