@@ -18,6 +18,8 @@ import ViewQuotation from "./Components/ViewQuotations";
 import Quotations from "./Components/Quotations";
 import ViewSalesOrder from "./Components/ViewSalesOrders";
 import SalesOrders from "./Components/SalesOrders";
+import SalesInvoiceView from "./Components/SalesInvoiceView";
+import SalesInvoices from "./Components/SalesInvoices";
 import AccountingRuleSettings from "./Components/AccountingRulSettings";
 import AddNewAccount from "./Components/AddNewAccount";
 import Employee from "./Components/Employees";
@@ -249,9 +251,8 @@ const App: React.FC = () => {
       items.push({ name: "Add New Account", path: "/addNewAccount", category: "Accounts" });
       items.push({ name: "Bank Transaction", path: "/depositWithdraw", category: "Accounts" });
       items.push({ name: "Quotation", path: "/ViewQuotations", category: "Accounts" });
-      //items.push({ name: "Sales Order", path: "/ViewSalesOrders", category: "Accounts" });
-
       items.push({ name: "Sales Order", path: "/sales-orders", category: "Accounts" });
+      items.push({ name: "Sales Invoice", path: "/sales-invoices", category: "Accounts" });
       items.push({ name: "Accounting Setting", path: "/accounting-settings", category: "Accounts" });
 
       items.push({ name: "Balance Sheet", path: "/BalanceSheet", category: "Accounts" });
@@ -503,6 +504,50 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute permissionName="Accounts" actionName="Add Account">
                 <ViewSalesOrder />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sales-invoices"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesInvoiceView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-invoices/new"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesInvoices />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sales-invoices/:id/edit"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesInvoices />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sales-invoices/:id/copy"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesInvoices />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sales-invoices/:id/view"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <SalesInvoiceView />
               </ProtectedRoute>
             }
           />
