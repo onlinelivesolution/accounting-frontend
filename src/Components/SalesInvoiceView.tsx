@@ -330,7 +330,7 @@ const SalesInvoiceView: React.FC = () => {
           </div>
 
           <button
-            onClick={() => navigate("/sales-orders/new")}
+            onClick={() => navigate("/sales-invoices/new")}
             className="min-w-[100px] h-[28px] bg-[#1c3c61] text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
 
           >
