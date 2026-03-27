@@ -45,9 +45,9 @@ export interface SalesOrderRow {
     amount: number;
 }
 
-interface QuotationDropdown {
-    quotationID: number;
-    quotationNo: string;
+interface SalesOrderDropdown {
+    salesOrderID: number;
+    salesOrderNo: string;
 }
 
 export interface DetailItemOption {
@@ -141,7 +141,7 @@ const SalesOrders: React.FC = () => {
     const [vatReference, setVatReference] = useState("");
     const [creditLimit, setCreditLimit] = useState<number | null>(null);
 
-    const [quotationList, setQuotationList] = useState<QuotationDropdown[]>([]);
+    const [salesOrderList, setSalesOrderList] = useState<SalesOrderDropdown[]>([]);
     const [quotationID, setQuotationID] = useState<number | null>(null);
 
     const [customerID, setCustomerID] = useState<number | null>(null);
@@ -292,17 +292,17 @@ const SalesOrders: React.FC = () => {
 
     // Load quotation number in dropdown list
     useEffect(() => {
-        const loadQuotations = async () => {
+        const loadSalesOrders = async () => {
             try {
-                const response = await fetch("http://127.0.0.1:8000/api/quotations/quotationDropdown");
-                const data: QuotationDropdown[] = await response.json();
-                setQuotationList(data);
+                const response = await fetch("http://127.0.0.1:8000/api/salesinvoices/salesOrderDropdown");
+                const data: SalesOrderDropdown[] = await response.json();
+                setSalesOrderList(data);
             } catch (error) {
-                console.error("Failed to load quotation dropdown", error);
+                console.error("Failed to load sales order dropdown", error);
             }
         };
 
-        loadQuotations();
+        loadSalesOrders();
     }, []);
 
     useEffect(() => {
@@ -689,9 +689,9 @@ const SalesOrders: React.FC = () => {
                         >
                             <option value="">Create Without Quotation</option>
 
-                            {quotationList.map((q) => (
-                                <option key={q.quotationID} value={q.quotationID}>
-                                    {q.quotationNo}
+                            {salesOrderList.map((so) => (
+                                <option key={so.salesOrderID} value={so.salesOrderID}>
+                                    {so.salesOrderNo}
                                 </option>
                             ))}
                         </select>

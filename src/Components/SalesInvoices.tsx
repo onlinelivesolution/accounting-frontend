@@ -157,9 +157,9 @@ const SalesInvoices: React.FC = () => {
         vatAmount: item.vatAmount ?? 0,
         discountPercent: "0",
         discountAmount: item.discountAmount ?? 0,
-        totalAmount: item.lineTotal ?? 0,
+        totalAmount: item.totalAmount ?? 0,
         exclusiveAmount: item.exclusiveAmount ?? 0,
-        amount: item.lineTotal ?? 0
+        amount: item.totalAmount ?? 0
       }));
 
       if (mappedRows.length > 0) {
@@ -234,7 +234,7 @@ const SalesInvoices: React.FC = () => {
   useEffect(() => {
     const loadSalesOrders = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/salesorders/salesOrderDropdown");
+        const response = await fetch("http://127.0.0.1:8000/api/salesinvoices/salesOrderDropdown");
         const data: SalesOrderDropdown[] = await response.json();
         setSalesOrderList(data);
       } catch (error) {
@@ -256,11 +256,11 @@ const SalesInvoices: React.FC = () => {
       return;
     }
 
-    // Load quotation information using quotation no to create sales order 
+    // Load sales order information using sales order no to create sales invoice 
     const loadSalesOrderData = async () => {
       try {
         const res = await fetch(
-          `/api/salesorders/${salesOrderID}/to-sales-invoice`
+          `/api/salesinvoices/${salesOrderID}/to-sales-invoice`
         );
 
         if (!res.ok) {
@@ -290,7 +290,7 @@ const SalesInvoices: React.FC = () => {
   useEffect(() => {
     if (!salesOrderID) return;
 
-    fetch(`http://127.0.0.1:8000/api/salesorders/${salesOrderID}/to-sales-invoice`)
+    fetch(`http://127.0.0.1:8000/api/salesinvoices/${salesOrderID}/to-sales-invoice`)
       .then(res => res.json())
       .then(data => {
         // Map quotation items to rows
@@ -491,7 +491,7 @@ const SalesInvoices: React.FC = () => {
         exclusiveAmount: Number(r.exclusiveAmount ?? 0),
         discountAmount: Number(r.discountAmount ?? 0),
         vatAmount: Number(r.vatAmount ?? 0),
-        lineTotal: Number(r.totalAmount ?? 0)
+        totalAmount: Number(r.totalAmount ?? 0)
       }))
     };
 
