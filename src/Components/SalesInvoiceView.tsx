@@ -273,6 +273,12 @@ const SalesInvoiceView: React.FC = () => {
       toast.error("Failed to update status");
     }
   };
+
+  const approveInvoice = async (id: number) => {
+    await api.put(`/api/salesinvoices/approveInvoice/${id}`);
+    alert("Approved successfully");
+  };
+
   return (
     <div className="grid grid-cols-6 gap-4 pt-1">
       <div className="grid grid-cols-6 col-span-6 bg-white p-4 border border-blue-300 rounded-lg gap-2">
@@ -444,6 +450,12 @@ const SalesInvoiceView: React.FC = () => {
                               onClick={() => openStatusModal(si)}
                               className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
                               Edit Status
+                            </button>
+
+                            <button
+                              onClick={() => approveInvoice(row.salesInvoiceID)}
+                              className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                              Approve Invoice
                             </button>
 
                             <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
