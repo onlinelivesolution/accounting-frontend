@@ -56,6 +56,7 @@ const ViewSalesOrders: React.FC = () => {
     const highlightId = location.state?.highlightId ?? null;
     const rowRefs = useRef<{ [key: number]: HTMLTableRowElement | null }>({});
 
+
     // For use confirmation modal
     // const handleCopyClick = (salesOrderID: number) => {
     //     setCopySalesOrderId(salesOrderID);

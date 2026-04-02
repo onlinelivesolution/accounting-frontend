@@ -51,6 +51,8 @@ const SalesInvoiceView: React.FC = () => {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [copySalesInvoiceId, setCopySalesInvoiceId] = useState<number | null>(null);
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
 
   const location = useLocation();
   const highlightId = location.state?.highlightId ?? null;
@@ -80,6 +82,7 @@ const SalesInvoiceView: React.FC = () => {
 
     }
   };
+
 
   const handleCancelCopy = () => {
     setConfirmOpen(false);
@@ -274,9 +277,31 @@ const SalesInvoiceView: React.FC = () => {
     }
   };
 
-  const approveInvoice = async (id: number) => {
-    await api.put(`/api/salesinvoices/approveInvoice/${id}`);
-    alert("Approved successfully");
+
+  const isAlreadyApproved = selectedInvoiceId
+    ? salesInvoices.find(si => si.salesInvoiceID === selectedInvoiceId)?.status === "Approved"
+    : false;
+
+  const approveSalesInvoice = async (invoiceId: number) => {
+    try {
+      const response = await api.put(`/api/salesinvoices/approveSalesInvoice/${invoiceId}`);
+
+      // ✅ Use the response if needed
+      if (response.status === 200) {
+        toast.success(response.data?.message || "Invoice approved successfully!");
+        fetchSalesInvoices();
+      } else {
+        toast.error(response.data?.message || "Failed to approve invoice");
+      }
+    } catch (error: any) {
+      // Use the error response from FastAPI
+      const msg =
+        error.response?.data?.detail || // FastAPI default error detail
+        error.response?.data?.message || // custom message from backend
+        "Failed to approve invoice";
+
+      toast.error(msg);
+    }
   };
 
   return (
@@ -370,175 +395,189 @@ const SalesInvoiceView: React.FC = () => {
             </thead>
             <tbody>
               {salesInvoices.map(si => (
-                <React.Fragment key={si.salesInvoiceID}>
-                  {/* ================= SUMMARY ROW ================= */}
-                  {/* <tr key={so.salesOrderID} className={so.salesOrderID === highlightId ? "bg-green-200 font-semibold" : ""}> */}
-                  <tr
-                    ref={(el) => (rowRefs.current[si.salesInvoiceID] = el)}
-                    key={si.salesInvoiceID}
-                    className={`border-b border-gray-300 transition-all duration-700 ${highlightId === si.salesInvoiceID ? "bg-green-200 animate-pulse" : ""}`}
-                  >
-                    <td className="w-[50px] py-2 px-2 text-center border-b border-gray-400 border-l border-[#1c3c61]">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 accent-[#1c3c61] cursor-pointer"
-                          checked={selectedSalesInvoices.includes(si.salesInvoiceID)}
-                          onChange={() => handleSelectIndividualCheckBox(si.salesInvoiceID)}
-                        />
+                
+              <React.Fragment key={si.salesInvoiceID}>
+                
+                {/* ================= SUMMARY ROW ================= */}
+                {/* <tr key={so.salesOrderID} className={so.salesOrderID === highlightId ? "bg-green-200 font-semibold" : ""}> */}
+                <tr
 
-                        <button
-                          className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#1c3c61] rounded hover:bg-[#161f4d] cursor-pointer"
-                          onClick={() => toggleSalesInvoiceExpand(si.salesInvoiceID)}
-                        >
-                          {expandedRows.includes(si.salesInvoiceID) ? "−" : "+"}
-                        </button>
-                      </div>
-                    </td>
+                  ref={(el) => (rowRefs.current[si.salesInvoiceID] = el)}
+                  key={si.salesInvoiceID}
+                  className={`border-b border-gray-300 transition-all duration-700 ${highlightId === si.salesInvoiceID ? "bg-green-200 animate-pulse" : ""}`}
+                >
+                  <td className="w-[50px] py-2 px-2 text-center border-b border-gray-400 border-l border-[#1c3c61]">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 accent-[#1c3c61] cursor-pointer"
+                        checked={selectedSalesInvoices.includes(si.salesInvoiceID)}
+                        onChange={() => handleSelectIndividualCheckBox(si.salesInvoiceID)}
+                      />
 
-                    <td className="w-[220px] p-2 border-b border-gray-400">
-                      {si.customerName}
-                    </td>
-                    <td className="w-[220px] p-2 border-b border-gray-400">
-                      {si.salesInvoiceNo}
-                    </td>
-                    <td className="w-[220px] p-2 border-b border-gray-400">
-                      {si.salesInvoiceDate}
-                    </td>
-                    <td className="w-[220px] p-2 border-b border-gray-400">
-                      {si.totalAmount.toFixed(2)}
-                    </td>
-                    <td className="w-[220px] p-2 border-b border-gray-400">
-                      {si.status}
-                    </td>
-
-                    <td className="w-[50px] p-2 border-b border-gray-400 relative">
-                      <div
-                        ref={openDropdown === si.salesInvoiceID ? dropdownRef : null}
-                        onClick={(e) => e.stopPropagation()}
-                        className="relative inline-block"
+                      <button
+                        className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#1c3c61] rounded hover:bg-[#161f4d] cursor-pointer"
+                        onClick={() => toggleSalesInvoiceExpand(si.salesInvoiceID)}
                       >
-                        <button
-                          type="button"
-                          className="flex items-center gap-2 text-[12px] text-blue-700 pr-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleDropdown(si.salesInvoiceID);
-                          }}
-                        >
-                          Actions
-                          <ChevronDown
-                            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${openDropdown === si.salesInvoiceID ? "rotate-180" : ""
+                        {expandedRows.includes(si.salesInvoiceID) ? "−" : "+"}
+                      </button>
+                    </div>
+                  </td>
+
+                  <td className="w-[220px] p-2 border-b border-gray-400">
+                    {si.customerName}
+                  </td>
+                  <td className="w-[220px] p-2 border-b border-gray-400">
+                    {si.salesInvoiceNo}
+                  </td>
+                  <td className="w-[220px] p-2 border-b border-gray-400">
+                    {si.salesInvoiceDate}
+                  </td>
+                  <td className="w-[220px] p-2 border-b border-gray-400">
+                    {si.totalAmount.toFixed(2)}
+                  </td>
+                  <td className="w-[220px] p-2 border-b border-gray-400">
+                    {si.status}
+                  </td>
+
+                  <td className="w-[50px] p-2 border-b border-gray-400 relative">
+                    <div
+                      ref={openDropdown === si.salesInvoiceID ? dropdownRef : null}
+                      onClick={(e) => e.stopPropagation()}
+                      className="relative inline-block"
+                    >
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 text-[12px] text-blue-700 pr-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleDropdown(si.salesInvoiceID);
+                        }}
+                      >
+                        Actions
+                        <ChevronDown
+                          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${openDropdown === si.salesInvoiceID ? "rotate-180" : ""
+                            }`}
+                        />
+                      </button>
+
+                      {openDropdown === si.salesInvoiceID && (
+                        
+                        <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
+
+                          <button
+                            className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
+                            onClick={() => {
+                              setOpenDropdown(null);
+                              navigate(`/sales-invoices/${si.salesInvoiceID}/edit`);
+                            }}
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() => openStatusModal(si)}
+                            className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                            Edit Status
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (isApproved) return; // extra safety
+
+                              setSelectedInvoiceId(si.salesInvoiceID);
+                              setApproveModalOpen(true);
+                              setOpenDropdown(null);
+                            }}
+                            className={`block w-full px-4 py-2 text-left text-[12px] ${isApproved
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "hover:bg-blue-200 text-blue-700"
                               }`}
+                            disabled={isApproved}
+                          >
+                            Approve Invoice
+                          </button>
+
+                          <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                            Print
+                          </button>
+
+                          <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
+                            onClick={() => {
+                              setOpenDropdown(null);
+                              navigate(`/sales-orders/${si.salesInvoiceID}/view`);
+                            }}
+                          >
+                            View History
+                          </button>
+
+                          <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
+                            Create Invoice
+                          </button>
+
+                          <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
+                            onClick={() => setConfirmId(si.salesInvoiceID)}
+                          >
+                            Copy Invoice
+                          </button>
+                          <ConfirmPopover
+                            isOpen={confirmId === si.salesInvoiceID}
+                            message="Create the same another sales invoice?"
+                            onConfirm={() => handleCopyInvoice(si.salesInvoiceID)}
+                            onCancel={() => {
+                              setConfirmId(null);
+                              setOpenDropdown(null);
+                            }}
                           />
-                        </button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
 
-                        {openDropdown === si.salesInvoiceID && (
-                          <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
-
-                            <button
-                              className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
-                              onClick={() => {
-                                setOpenDropdown(null);
-                                navigate(`/sales-invoices/${si.salesInvoiceID}/edit`);
-                              }}
-                            >
-                              Edit
-                            </button>
-
-                            <button
-                              onClick={() => openStatusModal(si)}
-                              className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                              Edit Status
-                            </button>
-
-                            <button
-                              onClick={() => approveInvoice(row.salesInvoiceID)}
-                              className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                              Approve Invoice
-                            </button>
-
-                            <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                              Print
-                            </button>
-
-                            <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
-                              onClick={() => {
-                                setOpenDropdown(null);
-                                navigate(`/sales-orders/${si.salesInvoiceID}/view`);
-                              }}
-                            >
-                              View History
-                            </button>
-
-                            <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200">
-                              Create Invoice
-                            </button>
-
-                            <button className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
-                              onClick={() => setConfirmId(si.salesInvoiceID)}
-                            >
-                              Copy Invoice
-                            </button>
-                            <ConfirmPopover
-                              isOpen={confirmId === si.salesInvoiceID}
-                              message="Create the same another sales invoice?"
-                              onConfirm={() => handleCopyInvoice(si.salesInvoiceID)}
-                              onCancel={() => {
-                                setConfirmId(null);
-                                setOpenDropdown(null);
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
+                {/* ================= EXPANDED DETAIL ROW ================= */}
+                {expandedRows.includes(si.salesInvoiceID) && (
+                  <tr className="">
+                    <td colSpan={7} className="bg-gray-50 p-3">
+                      <table className="w-full text-xs border border-gray-400">
+                        <thead className="bg-[#29588f] text-white">
+                          <tr>
+                            <th className="w-[220px] p-2 text-left">Item Description</th>
+                            <th className="w-[220px] p-2 text-right">Quantity</th>
+                            <th className="w-[220px] p-2 text-right">Unit Price</th>
+                            <th className="w-[220px] p-2 text-right">Discount Amount</th>
+                            <th className="w-[220px] p-2 text-right">VAT Amount</th>
+                            <th className="w-[220px] p-2 text-right">Line Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(details[si.salesInvoiceID] || []).map((d, i) => (
+                            <tr key={i}>
+                              <td className="w-[220px] p-2 border-b border-gray-400">
+                                {d.itemDescription}
+                              </td>
+                              <td className="w-[220px] p-2 border-b border-gray-400 text-right">
+                                {d.quantity}
+                              </td>
+                              <td className="w-[220px] p-2 border-b border-gray-400 text-right">
+                                {d.unitPrice}
+                              </td>
+                              <td className="w-[220px] p-2 border-b border-gray-400 text-right">
+                                {d.discountAmount}
+                              </td>
+                              <td className="w-[220px] p-2 border-b border-gray-400 text-right">
+                                {d.vatAmount}
+                              </td>
+                              <td className="w-[220px] p-2 border-b border-gray-400 text-right">
+                                {d.totalAmount}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </td>
                   </tr>
-
-                  {/* ================= EXPANDED DETAIL ROW ================= */}
-                  {expandedRows.includes(si.salesInvoiceID) && (
-                    <tr className="">
-                      <td colSpan={7} className="bg-gray-50 p-3">
-                        <table className="w-full text-xs border border-gray-400">
-                          <thead className="bg-[#29588f] text-white">
-                            <tr>
-                              <th className="w-[220px] p-2 text-left">Item Description</th>
-                              <th className="w-[220px] p-2 text-right">Quantity</th>
-                              <th className="w-[220px] p-2 text-right">Unit Price</th>
-                              <th className="w-[220px] p-2 text-right">Discount Amount</th>
-                              <th className="w-[220px] p-2 text-right">VAT Amount</th>
-                              <th className="w-[220px] p-2 text-right">Line Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(details[si.salesInvoiceID] || []).map((d, i) => (
-                              <tr key={i}>
-                                <td className="w-[220px] p-2 border-b border-gray-400">
-                                  {d.itemDescription}
-                                </td>
-                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
-                                  {d.quantity}
-                                </td>
-                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
-                                  {d.unitPrice}
-                                </td>
-                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
-                                  {d.discountAmount}
-                                </td>
-                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
-                                  {d.vatAmount}
-                                </td>
-                                <td className="w-[220px] p-2 border-b border-gray-400 text-right">
-                                  {d.totalAmount}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
+                )}
+              </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -578,6 +617,40 @@ const SalesInvoiceView: React.FC = () => {
           </div>
         </div>
       </div>
+      {approveModalOpen && selectedInvoiceId && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-6 rounded shadow-md w-80">
+            <h3 className="text-lg font-bold mb-4">Invoice Approval</h3>
+            <p className="mb-4">
+              {isAlreadyApproved
+                ? "This invoice has already been approved."
+                : "Are you sure you want to approve this invoice?"}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setApproveModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Close
+              </button>
+              <button
+                onClick={async () => {
+                  if (!isAlreadyApproved) {
+                    await approveSalesInvoice(selectedInvoiceId);
+                  }
+                  setApproveModalOpen(false);
+                  setSelectedInvoiceId(null);
+                }}
+                className={`px-4 py-2 rounded text-white ${isAlreadyApproved ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                disabled={isAlreadyApproved}
+              >
+                Approve
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {isStatusModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
 

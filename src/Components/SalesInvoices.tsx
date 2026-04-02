@@ -482,6 +482,7 @@ const SalesInvoices: React.FC = () => {
 
       remarks: remarks || null,
       createdBy: "admin",
+      companyCode: "01",
 
       items: rows.map(r => ({
         itemID: Number(r.itemID),
