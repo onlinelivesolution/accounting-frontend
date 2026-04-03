@@ -372,6 +372,7 @@ const SalesInvoiceView: React.FC = () => {
         </div>
 
         {/* Quotation List */}
+
         <div className="col-span-6 w-full h-[450px] overflow-x-auto overflow-y-auto border-[#1c3c61] rounded-lg">
           <table className="min-w-full table-fixed text-[11px] border-[#1c3c61] rounded-lg">
             <thead className="bg-[#1c3c61]">
@@ -384,7 +385,6 @@ const SalesInvoiceView: React.FC = () => {
                     onChange={handleSelectAllCheckBox}
                   />
                 </th>
-
                 <th className="w-[220px] p-2 text-left text-white">Customer Name</th>
                 <th className="w-[220px] p-2 text-left text-white">Sales Order No</th>
                 <th className="w-[220px] p-2 text-left text-white">Date Creation</th>
@@ -395,13 +395,9 @@ const SalesInvoiceView: React.FC = () => {
             </thead>
             <tbody>
               {salesInvoices.map(si => (
-                
-              <React.Fragment key={si.salesInvoiceID}>
-                
-                {/* ================= SUMMARY ROW ================= */}
-                {/* <tr key={so.salesOrderID} className={so.salesOrderID === highlightId ? "bg-green-200 font-semibold" : ""}> */}
-                <tr
 
+              <React.Fragment key={si.salesInvoiceID}>
+                <tr
                   ref={(el) => (rowRefs.current[si.salesInvoiceID] = el)}
                   key={si.salesInvoiceID}
                   className={`border-b border-gray-300 transition-all duration-700 ${highlightId === si.salesInvoiceID ? "bg-green-200 animate-pulse" : ""}`}
@@ -462,7 +458,7 @@ const SalesInvoiceView: React.FC = () => {
                       </button>
 
                       {openDropdown === si.salesInvoiceID && (
-                        
+
                         <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
 
                           <button
@@ -482,17 +478,17 @@ const SalesInvoiceView: React.FC = () => {
                           </button>
                           <button
                             onClick={() => {
-                              if (isApproved) return; // extra safety
+                             
 
                               setSelectedInvoiceId(si.salesInvoiceID);
                               setApproveModalOpen(true);
                               setOpenDropdown(null);
                             }}
-                            className={`block w-full px-4 py-2 text-left text-[12px] ${isApproved
+                            className={`block w-full px-4 py-2 text-left text-[12px] 
                               ? "text-gray-400 cursor-not-allowed"
                               : "hover:bg-blue-200 text-blue-700"
-                              }`}
-                            disabled={isApproved}
+                              `}
+                            
                           >
                             Approve Invoice
                           </button>
