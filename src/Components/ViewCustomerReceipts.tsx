@@ -8,8 +8,8 @@ import ConfirmPopover from "@/Components/common/ConfirmPopover";
 import toast from "react-hot-toast";
 import api from "@/utils/axios";
 
-interface SalesInvoiceDetail {
-  salesInvoiceDetailID: number;
+interface CustomerReceiptDetail {
+  customerReceiptDetailID: number;
   itemID: number;
   itemDescription: string;
   quantity: number;
@@ -17,7 +17,7 @@ interface SalesInvoiceDetail {
   totalAmount: number;
 }
 
-interface SalesInvoice {
+interface CustomerReceipt {
   salesInvoiceID: number;
   salesOrderID: number;
   salesInvoiceNo: string;
@@ -25,7 +25,7 @@ interface SalesInvoice {
   customerName: string;
   totalAmount: number;
   status: string;
-  details: SalesInvoiceDetail[];
+  details: CustomerReceiptDetail[];
 }
 
 const ViewCustomerReceipts: React.FC = () => {
@@ -40,7 +40,7 @@ const ViewCustomerReceipts: React.FC = () => {
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [filterType, setFilterType] = useState<string>("ALL");
-  const [salesInvoices, setSalesInvoices] = useState<SalesInvoice[]>([]);
+  const [customerReceipts, setCustomerReceipts] = useState<CustomerReceipt[]>([]);
   const [salesInvoiceNo, setSalesInvoiceNo] = useState("");
   const totalPages = Math.ceil(total / pageSize);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -116,7 +116,7 @@ const ViewCustomerReceipts: React.FC = () => {
     );
 
     const data = await res.json();
-    setSalesInvoices(data.items);
+    setCustomerReceipts(data.items);
     setTotal(data.total);
   };
 
@@ -231,7 +231,7 @@ const ViewCustomerReceipts: React.FC = () => {
   const handleSelectAllCheckBox = () => {
     setSelectAll(!selectAll);
     if (!selectAll) {
-      setSelectedSalesInvoices(salesInvoices.map((si) => si.salesInvoiceID));
+      setSelectedSalesInvoices(customerReceipts.map((si) => si.salesInvoiceID));
     } else {
       setSelectedSalesInvoices([]);
     }
@@ -279,7 +279,7 @@ const ViewCustomerReceipts: React.FC = () => {
 
 
   const isAlreadyApproved = selectedInvoiceId
-    ? salesInvoices.find(si => si.salesInvoiceID === selectedInvoiceId)?.status === "Approved"
+    ? customerReceipts.find(si => si.salesInvoiceID === selectedInvoiceId)?.status === "Approved"
     : false;
 
   const approveSalesInvoice = async (invoiceId: number) => {
@@ -361,11 +361,11 @@ const ViewCustomerReceipts: React.FC = () => {
           </div>
 
           <button
-            onClick={() => navigate("/sales-invoices/new")}
+            onClick={() => navigate("/customer-receipts/new")}
             className="min-w-[100px] h-[28px] bg-[#1c3c61] text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
 
           >
-            New Sales Invoice
+            New Receipt
           </button>
 
 
@@ -394,7 +394,7 @@ const ViewCustomerReceipts: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {salesInvoices.map((si) => {
+              {customerReceipts.map((si) => {
                 const isApproved = si.status?.toLowerCase() === "approved";
 
                 return (

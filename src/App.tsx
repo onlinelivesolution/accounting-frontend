@@ -20,6 +20,10 @@ import ViewSalesOrder from "./Components/ViewSalesOrders";
 import SalesOrders from "./Components/SalesOrders";
 import SalesInvoiceView from "./Components/SalesInvoiceView";
 import SalesInvoices from "./Components/SalesInvoices";
+
+import ViewCustomerReceipt from "./Components/ViewCustomerReceipts";
+import CustomerReceipt from "./Components/CustomerReceipts";
+
 import AccountingRuleSettings from "./Components/AccountingRulSettings";
 import AddNewAccount from "./Components/AddNewAccount";
 import Employee from "./Components/Employees";
@@ -253,6 +257,7 @@ const App: React.FC = () => {
       items.push({ name: "Quotation", path: "/ViewQuotations", category: "Accounts" });
       items.push({ name: "Sales Order", path: "/sales-orders", category: "Accounts" });
       items.push({ name: "Sales Invoice", path: "/sales-invoices", category: "Accounts" });
+      items.push({ name: "Customer Receipt", path: "/customer-receipts", category: "Accounts" });
       items.push({ name: "Accounting Setting", path: "/accounting-settings", category: "Accounts" });
 
       items.push({ name: "Balance Sheet", path: "/BalanceSheet", category: "Accounts" });
@@ -548,6 +553,49 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute permissionName="Accounts" actionName="Add Account">
                 <SalesInvoiceView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customer-receipts"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <ViewCustomerReceipt />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customer-receipts/new"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <CustomerReceipt />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/customer-receipts/:id/edit"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <CustomerReceipt />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/customer-receipts/:id/copy"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <CustomerReceipt />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/customer-receipts/:id/view"
+            element={
+              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+                <ViewCustomerReceipt />
               </ProtectedRoute>
             }
           />
