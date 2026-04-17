@@ -41,10 +41,6 @@ const CustomerReceipts: React.FC = () => {
     const [unallocatedAmount, setUnallocatedAmount] = useState<string>("0.00");
     const [customerReceiptNo, setCustomerReceiptNo] = useState<string>("");
     const [submitting, setSubmitting] = useState(false);
-    const [receiptNo, setReceiptNo] = useState("");
-    // const [receiptDate, setReceiptDate] = useState(
-    //     new Date().toISOString().split("T")[0]
-    // );
 
     const parseAmount = (val: string | number) => {
         if (val === null || val === undefined) return 0;
@@ -271,7 +267,7 @@ const CustomerReceipts: React.FC = () => {
             return;
         }
 
-        if (!receiptNo) {
+        if (!customerReceiptNo) {
             alert("Receipt No is required");
             return;
         }
@@ -303,23 +299,25 @@ const CustomerReceipts: React.FC = () => {
 
         // ✅ Build payload
         const payload = {
-            receiptNo: receiptNo,
-            receiptDate: receiptDate,
+            receiptNo: customerReceiptNo,
+            receiptDate: new Date(receiptDate).toISOString().split("T")[0],
             customerID: selectedCustomer,
-            totalAmount: receiveAmount,
+            totalAmount: parseAmount(receiveAmount),
             status: "APPROVED",
             details: selectedInvoices.map((inv) => ({
                 salesInvoiceID: inv.salesInvoiceID,
                 paidAmount: inv.receiveAmount,
+                discountAmount: inv.discountAmount,
+                companyCode: "01",
                 narration: "",
-                discountAmount: inv.discountAmount, // if backend supports
+                // discountAmount: inv.discountAmount, // if backend supports
             })),
         };
 
         try {
             setSubmitting(true);
 
-            await api.post("/api/customerreceipt/createCustomerReceipt", payload);
+            await api.post("/api/customerreceipts/createCustomerReceipt", payload);
 
             alert("Customer Receipt saved successfully");
 
@@ -327,7 +325,7 @@ const CustomerReceipts: React.FC = () => {
             setInvoices([]);
             setSelectedCustomer("");
             setCustomerBalance("0.00");
-            setReceiptNo("");
+            setCustomerReceiptNo("");
 
         } catch (err: any) {
             console.error(err);
