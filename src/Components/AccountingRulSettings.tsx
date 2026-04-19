@@ -189,16 +189,15 @@ const AccountingRuleSettings = () => {
                                         }
                                         className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
                                     >
-                                        <option value="totalAmount">Total Amount</option>
-                                        <option value="exclusiveAmount">Total Paid</option>
-                                        <option value="vatAmount">Total Applied</option>
-                                        <option value="discountAmount">Total Discount</option>
-                                        <option value="totalAmount">Total Unallocated</option>
                                         <option value="">Select Field</option>
+                                        <option value="totalAmount">Total Amount</option>                                        
                                         <option value="exclusiveAmount">Exclusive Amount</option>
                                         <option value="vatAmount">VAT Amount</option>
                                         <option value="discountAmount">Discount</option>
-
+                                        <option value="totalPaid">Total Paid</option>
+                                        <option value="totalApplied">Total Applied</option>
+                                        <option value="totalDiscount">Total Discount</option>
+                                        <option value="totalUnallocated">Total Unallocated</option>
 
                                     </select>
                                     <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
