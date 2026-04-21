@@ -309,7 +309,7 @@ const ViewCustomerReceipts: React.FC = () => {
       <div className="grid grid-cols-6 col-span-6 bg-white p-4 border border-blue-300 rounded-lg gap-2">
         <div className="col-span-6 flex flex-wrap items-center justify-between mb-2 gap-2">
           <label className="text-gray-700 p-1 text-lg font-bold whitespace-nowrap">
-            Sales Invoice
+            Customer Receipt
           </label>
         </div>
         <div className="col-span-6 flex flex-wrap items-center justify-end mb-2">

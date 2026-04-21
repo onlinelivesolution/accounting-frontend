@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { ChevronDown } from "lucide-react";
@@ -5,9 +6,9 @@ import DatePicker from "react-datepicker";
 import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "@/utils/axios";
+
 
 
 interface Customer {
@@ -41,6 +42,7 @@ const CustomerReceipts: React.FC = () => {
     const [unallocatedAmount, setUnallocatedAmount] = useState<string>("0.00");
     const [customerReceiptNo, setCustomerReceiptNo] = useState<string>("");
     const [submitting, setSubmitting] = useState(false);
+    const navigate = useNavigate();
 
     const parseAmount = (val: string | number) => {
         if (val === null || val === undefined) return 0;
@@ -230,10 +232,17 @@ const CustomerReceipts: React.FC = () => {
         try {
             setLoading(true);
 
+            const start = Date.now(); // ⏱ start timer
+
             const [invoiceRes, balanceRes] = await Promise.all([
                 api.get(`/api/customerreceipts/getCustomerInvoices/${customerId}`),
                 api.get(`/api/customerreceipts/getCustomerBalance/${customerId}`)
             ]);
+
+            // ⏱ ensure minimum 400ms loading
+            const elapsed = Date.now() - start;
+            const delay = Math.max(0, 400 - elapsed);
+            await new Promise((res) => setTimeout(res, delay));
 
             // ✅ Map API → UI state (IMPORTANT)
             const formattedInvoices = invoiceRes.data.map((inv: any) => ({
@@ -272,46 +281,52 @@ const CustomerReceipts: React.FC = () => {
             return;
         }
 
-        // ✅ Filter only selected rows
+        const total = parseAmount(receiveAmount);
+
+        if (!total || total <= 0) {
+            alert("Please enter receive amount");
+            return;
+        }
+
         const selectedInvoices = invoices.filter(
             (inv) => inv.receiveAmount > 0 || inv.discountAmount > 0
         );
 
-        if (selectedInvoices.length === 0) {
-            alert("Please enter at least one receive amount");
-            return;
-        }
+        // ✅ Validate only if invoices used
+        if (selectedInvoices.length > 0) {
+            for (const inv of selectedInvoices) {
+                if (inv.receiveAmount < 0 || inv.discountAmount < 0) {
+                    alert("Amount cannot be negative");
+                    return;
+                }
 
-        // ✅ Validation per row
-        for (const inv of selectedInvoices) {
-            if (inv.receiveAmount < 0 || inv.discountAmount < 0) {
-                alert("Amount cannot be negative");
-                return;
-            }
-
-            if (inv.receiveAmount + inv.discountAmount > inv.dueAmount) {
-                alert(
-                    `Receive + Discount exceeds due for invoice ${inv.salesInvoiceNo}`
-                );
-                return;
+                if (inv.receiveAmount + inv.discountAmount > inv.dueAmount) {
+                    alert(
+                        `Receive + Discount exceeds due for invoice ${inv.salesInvoiceNo}`
+                    );
+                    return;
+                }
             }
         }
 
-        // ✅ Build payload
         const payload = {
             receiptNo: customerReceiptNo,
             receiptDate: new Date(receiptDate).toISOString().split("T")[0],
-            customerID: selectedCustomer,
-            totalAmount: parseAmount(receiveAmount),
+            customerID: Number(selectedCustomer),
+            totalAmount: total,
             status: "APPROVED",
-            details: selectedInvoices.map((inv) => ({
-                salesInvoiceID: inv.salesInvoiceID,
-                paidAmount: inv.receiveAmount,
-                discountAmount: inv.discountAmount,
-                companyCode: "01",
-                narration: "",
-                // discountAmount: inv.discountAmount, // if backend supports
-            })),
+            companyCode: "01",
+
+            // ✅ KEY CHANGE
+            details:
+                selectedInvoices.length > 0
+                    ? selectedInvoices.map((inv) => ({
+                        salesInvoiceID: inv.salesInvoiceID,
+                        paidAmount: inv.receiveAmount,
+                        discountAmount: inv.discountAmount || 0,
+                        narration: "",
+                    }))
+                    : [], // ✅ allow empty for unallocated
         };
 
         try {
@@ -321,42 +336,55 @@ const CustomerReceipts: React.FC = () => {
 
             alert("Customer Receipt saved successfully");
 
-            // ✅ Reset form
-            setInvoices([]);
-            setSelectedCustomer("");
-            setCustomerBalance("0.00");
-            setCustomerReceiptNo("");
+            navigate("/customer-receipts");
+            // setInvoices([]);
+            // setSelectedCustomer("");
+            // setCustomerBalance("0.00");
+            // setCustomerReceiptNo("");
 
         } catch (err: any) {
             console.error(err);
-
             alert(err?.response?.data?.detail || "Error saving receipt");
         } finally {
             setSubmitting(false);
         }
     };
 
+    const Spinner = () => (
+        <div className="flex justify-center items-center h-full py-6">
+            <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+    );
+
+
 
     return (
-        <div className="p-6 bg-white rounded shadow">
-            <h2 className="text-sm font-semibold mb-6">Add New Customer Receipt</h2>
-            <div className="grid grid-cols-6 gap-2 mb-10">
-                <div className="flex items-center gap-2">
-                    <label className="w-40 text-[10px]">Receipt No</label>
-                    <div className="relative w-full">
-                        <input
-                            type="text"
-                            value={customerReceiptNo}
-                            readOnly
-                            className="w-full h-7 px-2 border border-gray-400 rounded text-[10px]"
-                        />
-                    </div>
+        <div className="p-3 sm:p-4 md:p-6 bg-white rounded shadow max-w-7xl mx-auto">
+
+            <h2 className="text-sm sm:text-base font-semibold mb-4 sm:mb-6">
+                Add New Customer Receipt
+            </h2>
+
+            {/* ✅ Form Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+
+                {/* Receipt No */}
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Receipt No</label>
+                    <input
+                        type="text"
+                        value={customerReceiptNo}
+                        readOnly
+                        className="w-full h-8 px-2 border border-gray-400 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    />
                 </div>
-                <div className="flex items-center gap-2">
-                    <label className="w-40 text-[12px]">Customer Name</label>
-                    <div className="relative w-full">
+
+                {/* Customer */}
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Customer Name</label>
+                    <div className="relative">
                         <select
-                            className="w-full text-[12px] text-gray-800 h-[28px] px-2 pr-8 rounded border border-gray-400 appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-gray-500"
+                            className="w-full text-[11px] h-8 px-2 pr-8 rounded border border-gray-400 appearance-none focus:outline-none focus:ring-1 focus:ring-gray-300"
                             value={selectedCustomer}
                             onChange={(e) => handleCustomerChange(Number(e.target.value))}
                         >
@@ -367,97 +395,124 @@ const CustomerReceipts: React.FC = () => {
                                 </option>
                             ))}
                         </select>
-                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                        />
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <label className="w-40 text-[12px]">Customer Balance</label>
-                    <div className="relative w-full">
-                        <input
-                            type="text"
-                            className="w-full h-7 px-2 border border-gray-400 rounded text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-gray-500"
-                            value={customerBalance}
-                            readOnly
-                        />
-                    </div>
+
+                {/* Balance */}
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Customer Balance</label>
+                    <input
+                        type="text"
+                        value={customerBalance}
+                        readOnly
+                        className="w-full h-8 px-2 border border-gray-400 rounded text-right text-[11px] focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    />
                 </div>
-                <div className="flex items-center gap-2">
-                    <label className="w-40 text-[12px]">Receive Amount</label>
-                    <div className="relative w-full">
-                        <input
-                            type="text"
-                            inputMode="decimal"
-                            value={receiveAmount}
-                            onChange={(e) => handleTopReceiveChange(e.target.value)}
-                            onBlur={handleTopReceiveBlur}
-                            className="w-full h-7 px-2 border border-gray-400 rounded text-[12px] text-right focus:outline-none focus:ring-1 focus:ring-gray-500"
-                        />
-                    </div>
+
+                {/* Receive Amount */}
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Receive Amount</label>
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        value={receiveAmount}
+                        onChange={(e) => handleTopReceiveChange(e.target.value)}
+                        onBlur={handleTopReceiveBlur}
+                        className="w-full h-8 px-2 border border-gray-400 rounded text-right text-[11px] focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    />
                 </div>
-                <div className="flex items-center gap-2">
-                    <label className="w-40 text-[12px]">Uallocated Amt</label>
-                    <div className="relative w-full">
-                        <input
-                            type="text"
-                            value={unallocatedAmount}
-                            readOnly
-                            className="text-right bg-gray-100 h-7 rounded pr-3 focus:outline-none focus:ring-1 focus:ring-gray-500"
-                        />
-                    </div>
+
+                {/* Unallocated */}
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Unallocated Amount</label>
+                    <input
+                        type="text"
+                        value={unallocatedAmount}
+                        readOnly
+                        className="w-full h-8 px-2 border border-gray-300 rounded text-right text-[11px] focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    />
                 </div>
-                <div className="flex items-center gap-2">
-                    <label className="w-100  text-[12px]">Receipt Date</label>
+
+                {/* Date */}
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Receipt Date</label>
+
                     <div className="relative w-full">
                         <DatePicker
                             selected={receiptDate}
                             onChange={(date: Date | null) => {
                                 if (!date) return;
-
                                 setReceiptDate(date);
                             }}
                             dateFormat="yyyy-MM-dd"
-                            popperPlacement="bottom-start"
-                            popperClassName="z-50"
-                            className="w-full h-[28px] px-2 rounded border border-gray-400 text-gray-700 text-[12px] focus:outline-none focus:ring-1 focus:ring-gray-500 cursor-pointer"
+                            className="
+        w-full h-[34px]
+        px-3 pr-10
+        border border-gray-400
+        rounded
+        text-[11px]
+        focus:outline-none
+        focus:ring-1 focus:ring-gray-500
+      "
                         />
+
                         <Calendar
                             size={16}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                            className="
+        absolute right-3 top-1/2 -translate-y-1/2
+        text-gray-500
+        pointer-events-none
+      "
                         />
                     </div>
                 </div>
-
-
             </div>
 
-            {/* ✅ Invoice Table */}
-            {invoices.length > 0 && (
-                <div className="col-span-6 w-full h-[450px] overflow-x-auto overflow-y-auto border-[#1c3c61] rounded-lg">
-                    <table className="min-w-full table-fixed text-[11px] border-[#1c3c61] rounded-lg">
-                        <thead className="bg-[#1c3c61] border border-gray-800">
-                            <tr>
-                                <th className="w-[220px] p-3 text-left text-white h-10">Invoice Number</th>
-                                <th className="w-[220px] p-3 text-left text-white h-10">Invoice Date</th>
-                                <th className="w-[220px] p-3 text-right text-white h-10">Total Amount</th>
-                                <th className="w-[220px] p-3 text-right text-white h-10">Due Amount</th>
-                                <th className="w-[220px] p-3 text-right text-white h-10">Receive Amount</th>
-                                <th className="w-[220px] p-3 text-right text-white h-10">Discount Amount</th>
-                            </tr>
-                        </thead>
+            {/* ✅ Table Section */}
+            <div className="w-full max-h-[400px] overflow-auto border rounded-lg relative">
 
-                        <tbody>
-                            {invoices.map((inv, index) => (
-                                <tr key={inv.salesInvoiceID}>
-                                    <td className="border border-gray-400 p-3 text-[12px]">{inv.salesInvoiceNo}</td>
-                                    <td className="border p-3 border-gray-400">
+                <table className="min-w-[700px] w-full text-[11px]">
+
+                    <thead className="bg-[#1c3c61] sticky top-0 z-10 border border-gray-700">
+                        <tr>
+                            <th className="p-2 text-left text-white">Invoice No</th>
+                            <th className="p-2 text-left text-white">Invoice Date</th>
+                            <th className="p-2 text-right text-white">Total Amount</th>
+                            <th className="p-2 text-right text-white">Due Amount</th>
+                            <th className="p-2 text-right text-white">Receive Amount</th>
+                            <th className="p-2 text-right text-white">Discount Amount</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={6}>
+                                    <Spinner />
+                                </td>
+                            </tr>
+                        ) : invoices.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="text-center p-4 text-gray-500">
+                                    Please select a customer to load invoices
+                                </td>
+                            </tr>
+                        ) : (
+                            invoices.map((inv, index) => (
+                                <tr key={inv.salesInvoiceID} className="border-b">
+                                    <td className="p-2 border border-gray-300">{inv.salesInvoiceNo}</td>
+                                    <td className="p-2 border border-gray-300">
                                         {new Date(inv.SalesInvoiceDate).toLocaleDateString()}
                                     </td>
-                                    <td className="border border-gray-400 p-3 text-right text-[12px]">{formatAmount(inv.totalAmount)}</td>
-                                    <td className="border border-gray-400 p-3 text-right text-[12px]">{formatAmount(inv.dueAmount)}</td>
+                                    <td className="p-2 text-right border border-gray-300">
+                                        {formatAmount(inv.totalAmount)}
+                                    </td>
+                                    <td className="p-2 text-right border border-gray-300">
+                                        {formatAmount(inv.dueAmount)}
+                                    </td>
 
-                                    {/* ✅ Receive Amount Input */}
-                                    <td className="border p-1 border-gray-400 text-[12px]">
+                                    <td className="p-1 border border-gray-300">
                                         <input
                                             type="text"
                                             inputMode="decimal"
@@ -466,12 +521,11 @@ const CustomerReceipts: React.FC = () => {
                                                 handleInvoiceReceiveChange(index, e.target.value)
                                             }
                                             onBlur={() => handleInvoiceBlur(index)}
-                                            className="border border-gray-200 w-full h-8 text-right rounded p-3 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                                            className="w-full text-right border border-gray-100 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-gray-500"
                                         />
                                     </td>
 
-                                    {/* ✅ Discount Input */}
-                                    <td className="border p-1 border-gray-400 text-[12px]">
+                                    <td className="p-1 border border-gray-300">
                                         <input
                                             type="text"
                                             inputMode="decimal"
@@ -480,20 +534,29 @@ const CustomerReceipts: React.FC = () => {
                                                 handleInvoiceDiscountChange(index, e.target.value)
                                             }
                                             onBlur={() => handleInvoiceBlur(index)}
-                                            className="border border-gray-200 w-full h-8 text-right rounded p-3 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                                            className="w-full text-right px-2 py-1 focus:outline-none focus:ring-1 focus:ring-gray-300"
                                         />
                                     </td>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-            <div className="flex justify-end mt-4">
+                            ))
+                        )}
+                    </tbody>
+                </table>
+
+                {/* Loading overlay */}
+                {loading && (
+                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                        <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                    </div>
+                )}
+            </div>
+
+            {/* ✅ Button */}
+            <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
                 <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="bg-blue-500 text-white text-sm w-[90px] h-[32px] border-1 hover:bg-blue-700 transition-colors duration-200 cursor-pointer rounded"
+                    className="w-full sm:w-auto bg-blue-500 text-white text-sm px-4 h-9 rounded hover:bg-blue-700 transition"
                 >
                     {submitting ? "Saving..." : "Submit"}
                 </button>
