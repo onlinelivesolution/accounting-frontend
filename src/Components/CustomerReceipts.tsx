@@ -41,6 +41,9 @@ const CustomerReceipts: React.FC = () => {
     const [receiveAmount, setReceiveAmount] = useState<string>("0.00");
     const [unallocatedAmount, setUnallocatedAmount] = useState<string>("0.00");
     const [customerReceiptNo, setCustomerReceiptNo] = useState<string>("");
+    const [paymentType, setPaymentType] = useState<"CASH" | "BANK">("CASH");
+    const [selectedAccount, setSelectedAccount] = useState<string>("");
+    const [accounts, setAccounts] = useState<any[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
 
@@ -196,6 +199,19 @@ const CustomerReceipts: React.FC = () => {
         setUnallocatedAmount(formatAmount(num));
     };
 
+    useEffect(() => {
+        const loadAccounts = async () => {
+            try {
+                const res = await api.get("/api/common/loadBankOrCashAccount");
+                setAccounts(res.data);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        loadAccounts();
+    }, []);
+
     // Load customer dropdown list
     useEffect(() => {
         const loadCustomerDropdown = async () => {
@@ -288,6 +304,11 @@ const CustomerReceipts: React.FC = () => {
             return;
         }
 
+        if (!selectedAccount) {
+            alert("Please select account");
+            return;
+        }
+
         const selectedInvoices = invoices.filter(
             (inv) => inv.receiveAmount > 0 || inv.discountAmount > 0
         );
@@ -316,6 +337,9 @@ const CustomerReceipts: React.FC = () => {
             totalAmount: total,
             status: "APPROVED",
             companyCode: "01",
+
+            accountID: selectedAccount,
+            paymentType: paymentType,
 
             // ✅ KEY CHANGE
             details:
@@ -423,6 +447,50 @@ const CustomerReceipts: React.FC = () => {
                     />
                 </div>
 
+
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Account Type</label>
+                    <div className="relative">
+                        <select
+                            value={paymentType}
+                            onChange={(e) => {
+                                setPaymentType(e.target.value as "CASH" | "BANK");
+                                setSelectedAccount("");
+                            }}
+                            className="w-full text-[11px] h-8 px-2 pr-8 rounded border border-gray-400 appearance-none focus:outline-none focus:ring-1 focus:ring-gray-300"
+
+                        >
+                            <option value="CASH">Cash</option>
+                            <option value="BANK">Bank</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                    </div>
+                </div>
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Bank Account</label>
+                    <div className="relative">
+                        <select
+                            value={selectedAccount}
+                            onChange={(e) => setSelectedAccount(e.target.value)}
+                            className="w-full text-[11px] h-8 px-2 pr-8 rounded border border-gray-400 appearance-none focus:outline-none focus:ring-1 focus:ring-gray-300"
+                        >
+                            <option value="">Select Account</option>
+
+                            {accounts
+                                .filter(acc =>
+                                    paymentType === "CASH"
+                                        ? acc.loadType === "CASH"
+                                        : acc.loadType === "BANK"
+                                )
+                                .map(acc => (
+                                    <option key={acc.detailItemCode} value={acc.detailItemCode}>
+                                        {acc.detailItemName}
+                                    </option>
+                                ))}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                    </div>
+                </div>
                 {/* Unallocated */}
                 <div className="flex flex-col">
                     <label className="text-[11px] mb-1">Unallocated Amount</label>
@@ -431,6 +499,14 @@ const CustomerReceipts: React.FC = () => {
                         value={unallocatedAmount}
                         readOnly
                         className="w-full h-8 px-2 border border-gray-300 rounded text-right text-[11px] focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label className="text-[11px] mb-1">Short Notes</label>
+                    <input
+                        type="text"
+                        value={customerReceiptNo}
+                        className="w-full h-8 px-2 border border-gray-400 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-gray-300"
                     />
                 </div>
 
