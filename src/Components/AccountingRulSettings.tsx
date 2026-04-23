@@ -7,13 +7,15 @@ export interface AccountingRow {
     accountCode: string;
     entryType: string;
     amountSource: string;
+    isDynamicAccount: boolean; // ✅ NEW
 }
 
 const emptyRow = (id: number): AccountingRow => ({
     rowId: id,
     accountCode: "",
-    entryType: "",
-    amountSource: ""
+    entryType: "DEBIT",
+    amountSource: "",
+    isDynamicAccount: false, // ✅ NEW
 });
 
 const AccountingRuleSettings = () => {
@@ -30,8 +32,7 @@ const AccountingRuleSettings = () => {
 
     const loadAccounts = async () => {
         try {
-            const res = await api.get("/api/common/loadDetailItems"
-            );
+            const res = await api.get("/api/common/loadDetailItems");
             setAccounts(res.data);
         } catch (error) {
             console.error("Error loading accounts:", error);
@@ -60,18 +61,38 @@ const AccountingRuleSettings = () => {
 
                 const updated = { ...r, [field]: value };
 
-                return {
-                    ...updated,
+                // ✅ If dynamic checked → clear accountCode
+                if (field === "isDynamicAccount" && value === true) {
+                    updated.accountCode = "";
+                }
 
-                };
+                return updated;
             })
         );
     };
 
-
-
-
     const submitAccountingRule = async () => {
+
+        // ✅ Validation: only ONE dynamic account allowed
+        const dynamicCount = rows.filter(r => r.isDynamicAccount).length;
+
+        if (dynamicCount > 1) {
+            alert("Only one dynamic account is allowed");
+            return;
+        }
+
+        // ✅ Validation: required fields
+        for (const row of rows) {
+            if (!row.entryType || !row.amountSource) {
+                alert("Please fill all required fields");
+                return;
+            }
+
+            if (!row.isDynamicAccount && !row.accountCode) {
+                alert("Account is required for non-dynamic rows");
+                return;
+            }
+        }
 
         const payload = {
             ruleCode,
@@ -80,9 +101,13 @@ const AccountingRuleSettings = () => {
             details: rows
         };
 
-        await api.post("/api/accounting-rules/createAccountingRule", payload);
-
-        alert("Accounting rule saved successfully");
+        try {
+            await api.post("/api/accounting-rules/createAccountingRule", payload);
+            alert("Accounting rule saved successfully");
+        } catch (err) {
+            console.error(err);
+            alert("Error saving rule");
+        }
     };
 
     return (
@@ -93,7 +118,6 @@ const AccountingRuleSettings = () => {
             </h2>
 
             {/* Header Section */}
-
             <div className="grid grid-cols-6 gap-4 mb-4">
 
                 <input
@@ -119,33 +143,34 @@ const AccountingRuleSettings = () => {
 
             </div>
 
-            {/* Rule Detail Table */}
-
-            <table className="w-full border border-gray-400 rounded rounded-lg text-sm">
-                <thead className="bg-[#1c3c61] rounded rounded-lg">
+            {/* Table */}
+            <table className="w-full border border-gray-400 rounded text-sm">
+                <thead className="bg-[#1c3c61]">
                     <tr>
-                        <th className="p-2 text-left text-white">Account</th>
+                        <th className="p-2 text-left text-white">Account Number</th>
                         <th className="p-2 text-left text-white">Entry Type</th>
                         <th className="p-2 text-left text-white">Amount Source</th>
+                        <th className="p-2 text-center text-white">Dynamic Account</th>
                         <th className="p-2 w-20 text-center text-white">Action</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    {rows.map(row => (
+                    {rows.map((row, index) => (
                         <tr key={row.rowId}>
+
+                            {/* Account */}
                             <td className="p-1 w-60">
                                 <div className="relative w-full">
                                     <select
+                                        disabled={row.isDynamicAccount} // ✅ disable if dynamic
                                         value={row.accountCode}
                                         onChange={(e) =>
                                             updateRow(row.rowId, "accountCode", e.target.value)
                                         }
                                         className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
                                     >
-
                                         <option value="">Select Account</option>
-
                                         {accounts.map((acc) => (
                                             <option
                                                 key={acc.detailItemCode}
@@ -154,32 +179,29 @@ const AccountingRuleSettings = () => {
                                                 {acc.detailItemCode} - {acc.detailItemName}
                                             </option>
                                         ))}
-
                                     </select>
-                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                                    />
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                                 </div>
                             </td>
 
-                            <td className="p-1 w-60">
+                            {/* Entry Type */}
+                            <td className="p-1 w-40">
                                 <div className="relative w-full">
                                     <select
                                         value={row.entryType}
                                         onChange={(e) =>
                                             updateRow(row.rowId, "entryType", e.target.value)
                                         }
-                                        className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
+                                        className="w-full h-[30px] px-2 border border-gray-400 rounded appearance-none"
                                     >
-
                                         <option value="DEBIT">DEBIT</option>
                                         <option value="CREDIT">CREDIT</option>
-
                                     </select>
-                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                                    />
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                                 </div>
                             </td>
 
+                            {/* Amount Source */}
                             <td className="p-1 w-60">
                                 <div className="relative w-full">
                                     <select
@@ -187,10 +209,10 @@ const AccountingRuleSettings = () => {
                                         onChange={(e) =>
                                             updateRow(row.rowId, "amountSource", e.target.value)
                                         }
-                                        className="w-full h-[30px] px-2 pr-8 rounded border border-gray-400 text-sm appearance-none"
+                                        className="w-full h-[30px] px-2 border border-gray-400 rounded appearance-none"
                                     >
                                         <option value="">Select Field</option>
-                                        <option value="totalAmount">Total Amount</option>                                        
+                                        <option value="totalAmount">Total Amount</option>
                                         <option value="exclusiveAmount">Exclusive Amount</option>
                                         <option value="vatAmount">VAT Amount</option>
                                         <option value="discountAmount">Discount</option>
@@ -198,19 +220,28 @@ const AccountingRuleSettings = () => {
                                         <option value="totalApplied">Total Applied</option>
                                         <option value="totalDiscount">Total Discount</option>
                                         <option value="totalUnallocated">Total Unallocated</option>
-
                                     </select>
-                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                                    />
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                                 </div>
                             </td>
 
+                            {/* Dynamic Checkbox */}
+                            <td className="p-1 w-10 text-center">
+                                <input
+                                    type="checkbox"
+                                    checked={row.isDynamicAccount}
+                                    onChange={(e) =>
+                                        updateRow(row.rowId, "isDynamicAccount", e.target.checked)
+                                    }
+                                />
+                            </td>
+
+                            {/* Actions */}
                             <td className="p-1 text-center">
                                 <div className="flex justify-center gap-2">
                                     <button
                                         onClick={() => addRowBelow(row.rowId)}
                                         className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-700"
-                                        title="Add row below"
                                     >
                                         A
                                     </button>
@@ -221,7 +252,6 @@ const AccountingRuleSettings = () => {
                                             : "bg-red-500 hover:bg-red-600"
                                             }`}
                                         disabled={rows.length === 1}
-                                        title="Delete row"
                                     >
                                         D
                                     </button>
@@ -229,21 +259,18 @@ const AccountingRuleSettings = () => {
                             </td>
 
                         </tr>
-
                     ))}
-
                 </tbody>
-
             </table>
 
-            <div className="mt-5 flex gap-3 justify-end">
+            {/* Submit */}
+            <div className="mt-5 flex justify-end">
                 <button
                     onClick={submitAccountingRule}
-                    className="bg-green-600 h-8 text-white px-3 py-1 rounded"
+                    className="bg-green-600 h-8 text-white px-4 rounded"
                 >
                     Submit
                 </button>
-
             </div>
 
         </div>
