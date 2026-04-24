@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Download, Trash2, MoreVertical, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import ConfirmModal from "@/Components/common/ConfirmModal";
@@ -331,6 +331,13 @@ const SalesInvoiceView: React.FC = () => {
     }
   };
 
+  const handleSendMail = (invoice: any) => {
+    console.log("Send mail for:", invoice);
+
+    // Example:
+    // open mail modal OR call API
+  };
+
   return (
     <div className="grid grid-cols-6 gap-4 pt-1">
       <div className="grid grid-cols-6 col-span-6 bg-white p-4 border border-blue-300 rounded-lg gap-2">
@@ -428,11 +435,11 @@ const SalesInvoiceView: React.FC = () => {
                   <React.Fragment key={si.salesInvoiceID}>
                     <tr
                       ref={(el) => (rowRefs.current[si.salesInvoiceID] = el)}
-                      className={`group border-b border-gray-300 transition-all duration-700 hover:bg-gray-200 ${highlightId === si.salesInvoiceID ? "bg-green-200 animate-pulse" : ""
+                      className={`group relative border-b border-gray-300 hover:bg-gray-200 ${highlightId === si.salesInvoiceID ? "bg-green-200 animate-pulse" : ""
                         }`}
                     >
                       <td className="w-[50px] py-2 px-2 text-center border-b border-gray-400 border-l border-[#1c3c61]">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-4">
                           <input
                             type="checkbox"
                             className="w-4 h-4 accent-[#1c3c61] cursor-pointer"
@@ -484,24 +491,43 @@ const SalesInvoiceView: React.FC = () => {
                       <td className="w-[120px] p-2 border-b border-gray-400 relative">
                         <div className="flex justify-end items-center gap-2">
 
-                          {/* ✅ Hover Actions (Download + Delete) */}
+                          {/* ✅ FLOATING ICONS (NO ANIMATION) */}
                           {openDropdown !== si.salesInvoiceID && (
-                            <div className="flex gap-2 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200">
+                            <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-gray/80 backdrop-blur-sm px-1 py-1 rounded shadow-sm">
 
+                              {/* Download */}
                               <button
                                 onClick={() => handleDownload(si)}
-                                className="px-2 py-1 text-[11px] bg-blue-500 text-white rounded hover:bg-blue-600"
+                                title="Download"
+                                className="p-2 rounded-full text-gray-800 hover:bg-blue-200 cursor-pointer"
                               >
-                                Download
+                                <Download className="w-5 h-5" />
                               </button>
 
+                              {/* Delete */}
                               <button
                                 onClick={() => handleDelete(si.salesInvoiceID)}
-                                className="px-2 py-1 text-[11px] bg-red-500 text-white rounded hover:bg-red-600"
+                                title="Delete"
+                                disabled={isApproved}
+                                className={`p-2 rounded-full ${isApproved
+                                  ? "text-gray-800 cursor-not-allowed"
+                                  : "text-gray-800 hover:bg-blue-200 cursor-pointer"
+                                  }`}
                               >
-                                Delete
+                                <Trash2 className="w-5 h-5" />
                               </button>
-
+                              {/* Mail */}
+                              <button
+                                onClick={() => handleOpenEmailModal(si)}
+                                title={si.customerEmail ? "Send Mail" : "No Email Found"}
+                                disabled={!si.customerEmail}
+                                className={`p-2 rounded-full ${!si.customerEmail
+                                    ? "text-gray-800 cursor-not-allowed"
+                                    : "text-gray-600 hover:bg-blue-200 cursor-pointer"
+                                  }`}
+                              >
+                                <Mail className="w-5 h-5" />
+                              </button>
                             </div>
                           )}
 
@@ -509,21 +535,20 @@ const SalesInvoiceView: React.FC = () => {
                           <div
                             ref={openDropdown === si.salesInvoiceID ? dropdownRef : null}
                             onClick={(e) => e.stopPropagation()}
-                            className="relative inline-block"
+                            className="relative flex justify-end"
                           >
                             <button
                               type="button"
-                              className="flex items-center gap-1 text-[12px] text-blue-700 pr-2"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleDropdown(si.salesInvoiceID);
                               }}
+                              className="relative group/more p-1 rounded hover:bg-blue-200 flex items-center cursor-pointer"
                             >
-                              Actions
-                              <ChevronDown
-                                className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${openDropdown === si.salesInvoiceID ? "rotate-180" : ""
-                                  }`}
-                              />
+                              <span className="absolute top-full mt-1 right-0 opacity-0 group-hover/more:opacity-100 text-[12px] text-gray-600 whitespace-nowrap pointer-events-none bg-gray-100 shadow px-2 py-[2px] border rounded">
+                                More Actions
+                              </span>
+                              <MoreVertical className="w-6 h-6 text-gray-600" />
                             </button>
 
                             {openDropdown === si.salesInvoiceID && (
@@ -539,8 +564,8 @@ const SalesInvoiceView: React.FC = () => {
                                     navigate(`/sales-invoices/${si.salesInvoiceID}/edit`);
                                   }}
                                   className={`block w-full px-4 py-2 text-left text-[12px] ${isApproved
-                                      ? "text-gray-400 cursor-not-allowed"
-                                      : "hover:bg-blue-200 text-blue-700"
+                                    ? "text-gray-400 cursor-not-allowed"
+                                    : "hover:bg-blue-200 text-blue-700"
                                     }`}
                                   disabled={isApproved}
                                 >
@@ -562,8 +587,8 @@ const SalesInvoiceView: React.FC = () => {
                                     setOpenDropdown(null);
                                   }}
                                   className={`block w-full px-4 py-2 text-left text-[12px] ${isApproved
-                                      ? "text-gray-400 cursor-not-allowed"
-                                      : "hover:bg-blue-200 text-blue-700"
+                                    ? "text-gray-400 cursor-not-allowed"
+                                    : "hover:bg-blue-200 text-blue-700"
                                     }`}
                                   disabled={isApproved}
                                 >
