@@ -20,7 +20,7 @@ import ViewSalesOrder from "./Components/ViewSalesOrders";
 import SalesOrders from "./Components/SalesOrders";
 import SalesInvoiceView from "./Components/SalesInvoiceView";
 import SalesInvoices from "./Components/SalesInvoices";
-
+import VerifyOTP from "./Components/VerifyOTP";
 import ViewCustomerReceipt from "./Components/ViewCustomerReceipts";
 import CustomerReceipt from "./Components/CustomerReceipts";
 
@@ -430,6 +430,9 @@ const App: React.FC = () => {
       <main className="flex-1 p-4 md:p-6">
         <Routes>
           <Route path="/" element={<LoginUser />} />
+          <Route path="/login" element={<LoginUser />} />
+
+          <Route path="/verify-otp" element={<VerifyOTP />} />
 
           <Route
             path="/dashboard"
