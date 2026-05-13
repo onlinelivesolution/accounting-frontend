@@ -3,6 +3,7 @@ import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./securityContext";
 
+
 const VerifyOTP: React.FC = () => {
 
     const [otp, setOtp] = useState("");
@@ -14,6 +15,7 @@ const VerifyOTP: React.FC = () => {
     const { login } = useAuth();
 
     const userID = location.state?.userID;
+    const devOtp = location.state?.otp;
 
     const handleVerifyOTP = async () => {
 
@@ -157,6 +159,9 @@ const VerifyOTP: React.FC = () => {
                         {errorMessage}
                     </div>
                 )}
+                <div className="mb-4 text-center text-green-600 font-bold">
+                   Development OTP: {devOtp}
+                </div>
 
                 <input
                     type="text"
