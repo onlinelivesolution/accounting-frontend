@@ -279,6 +279,14 @@ const App: React.FC = () => {
       items.push({ name: "Approve Salary", path: "/approveSalary", category: "Salary" });
     }
 
+    // Financial
+    if (hasPermission("Financial", "View")) {
+      items.push({ name: "Salary", path: "/financial/salary", category: "Financial" });
+      items.push({ name: "Bonus", path: "/financial/bonus", category: "Financial" });
+      items.push({ name: "Expense", path: "/financial/expense", category: "Financial" });
+      items.push({ name: "Payment", path: "/financial/payment", category: "Financial" });
+    }
+
     if (hasPermission("User", "Update User")) {
       items.push({ name: "Manage User", path: "/manageUser", category: "User" });
       items.push({ name: "Manage Permission", path: "/managePermission", category: "User" });
@@ -380,6 +388,16 @@ const App: React.FC = () => {
                 onToggle={(c) => toggleDropdown(c)}
                 onNavigate={navigateAndClose}
                 activeParent={activeParent() === "Salary"}
+              />
+
+              <DropdownMenu
+                label="Financial"
+                category="Financial"
+                menuItems={menuItems}
+                isOpen={dropdownOpen === "Financial"}
+                onToggle={(c) => toggleDropdown(c)}
+                onNavigate={navigateAndClose}
+                activeParent={activeParent() === "Financial"}
               />
 
               <DropdownMenu
@@ -697,6 +715,42 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute permissionName="Salary" actionName="Add Employee">
                 <ApproveSalaries />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/financial/salary"
+            element={
+              <ProtectedRoute permissionName="Financial" actionName="View">
+                <GenerateSalaries />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/financial/bonus"
+            element={
+              <ProtectedRoute permissionName="Financial" actionName="View">
+                <GenerateBonuses />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/financial/expense"
+            element={
+              <ProtectedRoute permissionName="Financial" actionName="View">
+                <h2>Expense Page</h2>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/financial/payment"
+            element={
+              <ProtectedRoute permissionName="Financial" actionName="View">
+                <h2>Payment Page</h2>
               </ProtectedRoute>
             }
           />

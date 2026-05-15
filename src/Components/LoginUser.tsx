@@ -16,63 +16,7 @@ const LoginUser: React.FC = () => {
 
   const navigate = useNavigate();
 
-  // const handleLogin = async (
-  //   e: React.FormEvent
-  // ) => {
 
-  //   e.preventDefault();
-
-  //   setErrorMessage("");
-
-  //   setLoading(true);
-
-  //   try {
-
-  //     const response = await axios.post(
-  //       "http://127.0.0.1:8000/api/auth/login",
-  //       {
-  //         userName: username,
-  //         password,
-  //       }
-  //     );
-
-  //     /*
-  //       Expected Response:
-  //       {
-  //         message: "OTP sent successfully",
-  //         userID: 1
-  //       }
-  //     */
-
-  //     navigate("/verify-otp", {
-  //       state: {
-  //         userID: response.data.userID,
-  //         userName: username,
-  //       },
-  //     });
-
-  //   } catch (error: any) {
-
-  //     console.error("Login failed:", error);
-
-  //     if (error.response?.data?.detail) {
-
-  //       setErrorMessage(
-  //         error.response.data.detail
-  //       );
-
-  //     } else {
-
-  //       setErrorMessage(
-  //         "Invalid username or password"
-  //       );
-  //     }
-
-  //   } finally {
-
-  //     setLoading(false);
-  //   }
-  // };
 
   const handleLogin = async (e: React.FormEvent) => {
 
