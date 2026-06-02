@@ -41,6 +41,7 @@ const LoginUser: React.FC = () => {
       navigate("/verify-otp", {
         state: {
           userID: response.data.userID,
+          tenant: response.data.tenant,
           otp: response.data.otp // TEMPORARY
         }
       });

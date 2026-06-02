@@ -15,6 +15,7 @@ const VerifyOTP: React.FC = () => {
     const { login } = useAuth();
 
     const userID = location.state?.userID;
+    const tenant = location.state?.tenant;
     const devOtp = location.state?.otp;
 
     const handleVerifyOTP = async () => {
@@ -44,6 +45,7 @@ const VerifyOTP: React.FC = () => {
                 "http://127.0.0.1:8000/api/auth/verify-otp",
                 {
                     userID: userID,
+                    tenant: tenant,
                     otpCode: otp.trim()
                 }
             );
@@ -124,6 +126,11 @@ const VerifyOTP: React.FC = () => {
             console.error(
                 "VERIFY OTP ERROR:",
                 error
+            );
+
+            console.log(
+                "SERVER RESPONSE:",
+                error.response?.data
             );
 
             if (error.response?.data?.detail) {
