@@ -16,7 +16,7 @@ const VerifyOTP: React.FC = () => {
 
     const userID = location.state?.userID;
     const tenant = location.state?.tenant;
-    const devOtp = location.state?.otp;
+    const otpFromLogin = location.state?.otp;
 
     const handleVerifyOTP = async () => {
 
@@ -40,6 +40,11 @@ const VerifyOTP: React.FC = () => {
             // =========================
             // VERIFY OTP
             // =========================
+            console.log("VERIFY PAYLOAD:", {
+                userID,
+                tenant,
+                otpCode: otp.trim()
+            });
 
             const response = await axios.post(
                 "http://127.0.0.1:8000/api/auth/verify-otp",
@@ -121,29 +126,26 @@ const VerifyOTP: React.FC = () => {
 
             navigate("/dashboard");
 
-        } catch (error: any) {
+        } 
+        catch (error: any) {
 
-            console.error(
-                "VERIFY OTP ERROR:",
-                error
-            );
+            console.error("VERIFY OTP ERROR:", error);
 
-            console.log(
-                "SERVER RESPONSE:",
-                error.response?.data
-            );
+            console.log("SERVER RESPONSE:", error.response?.data);
 
             if (error.response?.data?.detail) {
 
-                setErrorMessage(
-                    error.response.data.detail
-                );
+                const detail = error.response.data.detail;
+
+                if (Array.isArray(detail)) {
+                    setErrorMessage(detail[0]?.msg || "Validation Error");
+                } else {
+                    setErrorMessage(String(detail));
+                }
 
             } else {
 
-                setErrorMessage(
-                    "OTP verification failed"
-                );
+                setErrorMessage("OTP verification failed");
             }
 
         } finally {
@@ -167,7 +169,7 @@ const VerifyOTP: React.FC = () => {
                     </div>
                 )}
                 <div className="mb-4 text-center text-green-600 font-bold">
-                   Development OTP: {devOtp}
+                   Development OTP: {otpFromLogin}
                 </div>
 
                 <input

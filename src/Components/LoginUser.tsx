@@ -20,38 +20,65 @@ const LoginUser: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
 
-    e.preventDefault();
+      e.preventDefault();
 
-    setErrorMessage("");
+      setErrorMessage("");
 
-    setLoading(true);
+      setLoading(true);
 
-    try {
+      try {
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/auth/login",
-        {
-          userName: username,
-          password,
-        }
-      );
+          const payload = {
+              userName: username.trim(),
+              password: password,
+          };
 
-      console.log(response.data);
+          console.log("LOGIN PAYLOAD:", payload);
 
-      navigate("/verify-otp", {
-        state: {
-          userID: response.data.userID,
-          tenant: response.data.tenant,
-          otp: response.data.otp // TEMPORARY
-        }
-      });
+          const response = await axios.post(
+              "http://127.0.0.1:8000/api/auth/login",
+              payload
+          );
 
-    } catch (error) {
+          console.log("LOGIN RESPONSE:", response.data);
 
-      console.error("Login failed:", error);
+          console.log("NAVIGATING WITH STATE:", {
+              userID: response.data.userID,
+              tenant: response.data.tenant,
+              otp: response.data.otp,
+          });
 
-      alert("Invalid username or password");
-    }
+          navigate("/verify-otp", {
+              state: {
+                  userID: response.data.userID,
+                  tenant: response.data.tenant,
+                  otp: response.data.otp,
+              },
+          });
+
+      } catch (error: any) {
+
+          console.error("LOGIN ERROR:", error);
+
+          console.log("SERVER RESPONSE:", error.response?.data);
+
+          if (error.response?.data?.detail) {
+
+              setErrorMessage(
+                  typeof error.response.data.detail === "string"
+                      ? error.response.data.detail
+                      : "Login failed"
+              );
+
+          } else {
+
+              setErrorMessage("Invalid username or password");
+          }
+
+      } finally {
+
+          setLoading(false);
+      }
   };
 
   return (
@@ -64,7 +91,7 @@ const LoginUser: React.FC = () => {
       >
 
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-700">
-          ERP Login
+          Online Accounting
         </h2>
 
         {/* Error Message */}
