@@ -114,14 +114,38 @@ const ViewSalesOrders: React.FC = () => {
     };
 
     // Load sales orders in grid
-    const fetchSalesOrders = async () => {
-        const res = await fetch(
-            `http://127.0.0.1:8000/api/salesorders/getSalesOrderFilters?filterType=${filterType}&salesOrderNo=${salesOrderNo}&page=${page}&pageSize=${pageSize}`
-        );
+    // const fetchSalesOrders = async () => {
+    //     const res = await fetch(
+    //         `http://127.0.0.1:8000/api/salesorders/getSalesOrderFilters?filterType=${filterType}&salesOrderNo=${salesOrderNo}&page=${page}&pageSize=${pageSize}`
+    //     );
 
-        const data = await res.json();
-        setSalesOrders(data.items);
-        setTotal(data.total);
+    //     const data = await res.json();
+    //     setSalesOrders(data.items);
+    //     setTotal(data.total);
+    // };
+    const fetchSalesOrders = async () => {
+
+        try {
+
+            const response = await api.get(
+                "/api/salesorders/getSalesOrderFilters",
+                {
+                    params: {
+                        filterType,
+                        salesOrderNo,
+                        page,
+                        pageSize,
+                    },
+                }
+            );
+
+            setSalesOrders(response.data.items);
+            setTotal(response.data.total);
+
+        } catch (error) {
+
+            console.error("Sales Order Load Error:", error);
+        }
     };
 
     useEffect(() => {

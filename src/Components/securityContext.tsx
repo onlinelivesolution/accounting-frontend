@@ -1,5 +1,11 @@
 // src/Components/securityContext.tsx
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
+
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+} from "react";
 
 interface Permission {
   permissionName: string;
@@ -15,56 +21,80 @@ interface User {
 
 interface AuthContextType {
   token: string | null;
+  tenant: string | null;
   user: User | null;
   permissions: Permission[];
-  login: (token: string, user: User, permissions: Permission[]) => void;
+  login: (token: string, tenant: string, user: User, permissions: Permission[]) => void;
   logout: () => void;
   hasPermission: (permissionName: string, actionName: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Safe JSON parser
+const safeParse = (value: string | null) => {
+  try {
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token")
+  );
+
+  const [tenant, setTenant] = useState<string | null>(
+    localStorage.getItem("tenant")
+  );
+
   const [user, setUser] = useState<User | null>(
-    localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")!) : null
+    safeParse(localStorage.getItem("user"))
   );
+
   const [permissions, setPermissions] = useState<Permission[]>(
-    localStorage.getItem("permissions") ? JSON.parse(localStorage.getItem("permissions")!) : []
+    safeParse(localStorage.getItem("permissions")) || []
   );
 
-  // Restore token/user/permissions on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    const storedPermissions = localStorage.getItem("permissions");
-
-    if (storedToken && storedUser && storedPermissions) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      setPermissions(JSON.parse(storedPermissions));
-    }
-  }, []);
-
-  const login = (token: string, user: User, permissions: Permission[]) => {
+  // LOGIN
+  const login = (
+    token: string,
+    tenant: string,
+    user: User,
+    permissions: Permission[]
+  ) => {
     setToken(token);
+    setTenant(tenant);
     setUser(user);
     setPermissions(permissions);
 
     localStorage.setItem("token", token);
+    localStorage.setItem("tenant", tenant);
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.setItem("permissions", JSON.stringify(permissions));
   };
 
+  // LOGOUT
   const logout = () => {
     setToken(null);
+    setTenant(null);
     setUser(null);
     setPermissions([]);
-    localStorage.clear();
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("tenant");
+    localStorage.removeItem("user");
+    localStorage.removeItem("permissions");
   };
 
-  const hasPermission = (permissionName: string, actionName: string): boolean => {
+  // PERMISSION CHECK
+  const hasPermission = (
+    permissionName: string,
+    actionName: string
+  ): boolean => {
     if (!permissions || permissions.length === 0) return false;
+
     return permissions.some(
       (p) =>
         p.permissionName?.toLowerCase() === permissionName.toLowerCase() &&
@@ -73,7 +103,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, permissions, login, logout, hasPermission }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        tenant,
+        user,
+        permissions,
+        login,
+        logout,
+        hasPermission,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -81,6 +121,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
   return context;
 };

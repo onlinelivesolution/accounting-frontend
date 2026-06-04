@@ -62,7 +62,8 @@ const VerifyOTP: React.FC = () => {
 
             const {
                 token,
-                user
+                user,
+                tenant
             } = response.data;
 
             // =========================
@@ -114,11 +115,7 @@ const VerifyOTP: React.FC = () => {
             // LOGIN
             // =========================
 
-            login(
-                token,
-                user,
-                permissions
-            );
+            login(token, response.data.tenant, user, permissions);
 
             // =========================
             // NAVIGATE
