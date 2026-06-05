@@ -62,8 +62,7 @@ const VerifyOTP: React.FC = () => {
 
             const {
                 token,
-                user,
-                tenant
+                user
             } = response.data;
 
             // =========================
@@ -128,21 +127,27 @@ const VerifyOTP: React.FC = () => {
 
             console.error("VERIFY OTP ERROR:", error);
 
-            console.log("SERVER RESPONSE:", error.response?.data);
+            console.log("FULL RESPONSE:", error.response);
+
+            console.log("DATA:", error.response?.data);
 
             if (error.response?.data?.detail) {
 
-                const detail = error.response.data.detail;
-
-                if (Array.isArray(detail)) {
-                    setErrorMessage(detail[0]?.msg || "Validation Error");
+                if (Array.isArray(error.response.data.detail)) {
+                    setErrorMessage(
+                        JSON.stringify(error.response.data.detail)
+                    );
                 } else {
-                    setErrorMessage(String(detail));
+                    setErrorMessage(
+                        error.response.data.detail
+                    );
                 }
 
             } else {
 
-                setErrorMessage("OTP verification failed");
+                setErrorMessage(
+                    error.message || "OTP verification failed"
+                );
             }
 
         } finally {

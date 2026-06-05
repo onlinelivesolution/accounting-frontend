@@ -283,11 +283,27 @@ const SalesOrders: React.FC = () => {
     }, []);
 
     // Load next sales order number
+    // useEffect(() => {
+    //     axios
+    //         .get("http://127.0.0.1:8000/api/salesorders/getNextSalesOrderNo")
+    //         .then(res => setSalesOrderNo(res.data.salesOrderNo))
+    //         .catch(err => console.error(err));
+    // }, []);
+
     useEffect(() => {
-        axios
-            .get("http://127.0.0.1:8000/api/salesorders/getNextSalesOrderNo")
-            .then(res => setSalesOrderNo(res.data.salesOrderNo))
-            .catch(err => console.error(err));
+        const fetchSalesOrderNo = async () => {
+            try {
+                const res = await api.get(
+                    "/api/salesorders/getNextSalesOrderNo"
+                );
+
+                setSalesOrderNo(res.data.salesOrderNo);
+            } catch (err) {
+                console.error("Failed to load sales order no:", err);
+            }
+        };
+
+        fetchSalesOrderNo();
     }, []);
 
     // Load quotation number in dropdown list
