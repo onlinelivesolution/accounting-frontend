@@ -137,19 +137,48 @@ const SalesInvoiceView: React.FC = () => {
   };
 
   // Load sales orders in grid
-  const fetchSalesInvoices = async () => {
-    const res = await fetch(
-      `http://127.0.0.1:8000/api/salesinvoices/getSalesInvoiceFilters?filterType=${filterType}&salesInvoiceNo=${salesInvoiceNo}&page=${page}&pageSize=${pageSize}`
-    );
+  // const fetchSalesInvoices = async () => {
+  //   const res = await fetch(
+  //     `http://127.0.0.1:8000/api/salesinvoices/getSalesInvoiceFilters?filterType=${filterType}&salesInvoiceNo=${salesInvoiceNo}&page=${page}&pageSize=${pageSize}`
+  //   );
 
-    const data = await res.json();
-    setSalesInvoices(data.items);
-    setTotal(data.total);
-  };
+  //   const data = await res.json();
+  //   setSalesInvoices(data.items);
+  //   setTotal(data.total);
+  // };
 
-  useEffect(() => {
-    fetchSalesInvoices();
-  }, [filterType, page]);
+  // useEffect(() => {
+  //   fetchSalesInvoices();
+  // }, [filterType, page]);
+
+      const fetchSalesInvoices = async () => {
+
+        try {
+
+            const response = await api.get(
+                "/api/salesinvoices/getSalesInvoiceFilters",
+                {
+                    params: {
+                        filterType,
+                        salesInvoiceNo,
+                        page,
+                        pageSize,
+                    },
+                }
+            );
+
+            setSalesInvoices(response.data.items);
+            setTotal(response.data.total);
+
+        } catch (error) {
+
+            console.error("Sales Order Load Error:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchSalesInvoices();
+    }, [filterType, page]);
 
   // Highlight animation
   useEffect(() => {
@@ -265,7 +294,10 @@ const SalesInvoiceView: React.FC = () => {
   };
 
   // Expand sales order details
-  const toggleSalesInvoiceExpand = async (salesInvoiceID: number) => {
+  const toggleSalesInvoiceExpand = async (
+    salesInvoiceID: number
+  ) => {
+
     setExpandedRows(prev =>
       prev.includes(salesInvoiceID)
         ? prev.filter(id => id !== salesInvoiceID)
@@ -273,15 +305,28 @@ const SalesInvoiceView: React.FC = () => {
     );
 
     if (!details[salesInvoiceID]) {
-      const res = await axios.get(
-        `http://127.0.0.1:8000/api/salesinvoices/${salesInvoiceID}`
-      );
-      setDetails(prev => ({
-        ...prev,
-        [salesInvoiceID]: res.data.items
-      }));
+
+      try {
+
+        const res = await api.get(
+          `/api/salesinvoices/${salesInvoiceID}`
+        );
+
+        setDetails(prev => ({
+          ...prev,
+          [salesInvoiceID]: res.data.items
+        }));
+
+      } catch (error) {
+
+        console.error(
+          "Failed to load Sales Invoice details",
+          error
+        );
+      }
     }
   };
+
   // Update sales order status
   const updateStatus = async () => {
     if (!selectedInvoice) return;

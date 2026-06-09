@@ -175,11 +175,12 @@ const SalesInvoices: React.FC = () => {
   useEffect(() => {
     const loadVatRates = async () => {
       try {
-        const response = await axios.get(
-          "http://127.0.0.1:8000/api/commondropdown/loadVatRateDropdown"
+        const res = await api.get(
+          "/api/commondropdown/loadVatRateDropdown"
         );
 
-        setVatRates(response.data);
+        setVatRates(res.data);
+
       } catch (error) {
         console.error("Failed to load VAT rates", error);
       }
@@ -192,11 +193,12 @@ const SalesInvoices: React.FC = () => {
   useEffect(() => {
     const loadLineItemDropdown = async () => {
       try {
-        const response = await axios.get(
-          "http://127.0.0.1:8000/api/commondropdown/loadLineItemDropdown"
+        const res = await api.get(
+          "/api/commondropdown/loadLineItemDropdown"
         );
 
-        setLineItems(response.data);
+        setLineItems(res.data);
+
       } catch (error) {
         console.error("Failed to load Line Item", error);
       }
@@ -209,11 +211,12 @@ const SalesInvoices: React.FC = () => {
   useEffect(() => {
     const loadCustomerDropdown = async () => {
       try {
-        const response = await axios.get(
-          "http://127.0.0.1:8000/api/commondropdown/loadCustomerDropdown"
+        const res = await api.get(
+          "/api/commondropdown/loadCustomerDropdown"
         );
 
-        setCustomers(response.data);
+        setCustomers(res.data);
+
       } catch (error) {
         console.error("Failed to load customer", error);
       }
@@ -223,22 +226,33 @@ const SalesInvoices: React.FC = () => {
   }, []);
 
   // Load next sales order number
-  useEffect(() => {
-    axios
-      .get("http://127.0.0.1:8000/api/salesinvoices/getNextSalesInvoiceNo")
-      .then(res => setSalesInvoiceNo(res.data.salesInvoiceNo))
-      .catch(err => console.error(err));
-  }, []);
+
+    useEffect(() => {
+        const fetchSalesInvoiceNo = async () => {
+            try {
+                const res = await api.get(
+                    "/api/salesinvoices/getNextSalesInvoiceNo"
+                );
+
+                setSalesInvoiceNo(res.data.salesInvoiceNo);
+            } catch (err) {
+                console.error("Failed to load sales invoice no:", err);
+            }
+        };
+
+        fetchSalesInvoiceNo();
+    }, []);
 
   // Load sales order number in dropdown list
   useEffect(() => {
     const loadSalesOrders = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/salesinvoices/salesOrderDropdown");
-        const data: SalesOrderDropdown[] = await response.json();
-        setSalesOrderList(data);
+        const res = await api.get(
+            "/api/salesinvoices/salesOrderDropdown"
+        );
+        setSalesOrderList(res.data.salesOrderDropdown);
       } catch (error) {
-        console.error("Failed to load quotation dropdown", error);
+        console.error("Failed to load sales order dropdown", error);
       }
     };
 
@@ -288,29 +302,55 @@ const SalesInvoices: React.FC = () => {
 
 
   useEffect(() => {
+
     if (!salesOrderID) return;
 
-    fetch(`http://127.0.0.1:8000/api/salesinvoices/${salesOrderID}/to-sales-invoice`)
-      .then(res => res.json())
-      .then(data => {
-        // Map quotation items to rows
-        const mappedRows = data.items.map((item: any, index: number) => ({
-          rowId: index + 1,
-          itemID: item.itemID,
-          itemCode: item.itemID.toString().padStart(6, "0"), // optional formatting
-          itemName: item.itemDescription,
-          unitPrice: item.unitPrice,
-          quantity: item.quantity.toFixed(2),
-          vATRateID: 1, // default VAT, or from item.vatRateID if available
-          discountPercent: ((item.discountAmount / (item.unitPrice * item.quantity)) * 100).toFixed(2),
-          discountAmount: item.discountAmount,
-          exclusiveAmount: item.unitPrice * item.quantity - item.discountAmount,
-          vatAmount: 0, // calculate VAT if needed
-          totalAmount: item.lineTotal
-        }));
+    const loadSalesOrderData = async () => {
 
-        setRows(mappedRows); // ✅ Replace rows, do NOT push individually
-      });
+      try {
+
+        const res = await api.get(
+          `/api/salesinvoices/${salesOrderID}/to-sales-invoice`
+        );
+
+        const data = res.data;
+
+        const mappedRows = data.items.map(
+          (item: any, index: number) => ({
+            rowId: index + 1,
+            itemID: item.itemID,
+            itemCode: item.itemID.toString().padStart(6, "0"),
+            itemName: item.itemDescription,
+            unitPrice: item.unitPrice,
+            quantity: item.quantity.toFixed(2),
+            vATRateID: 1,
+            discountPercent: (
+              (item.discountAmount /
+                (item.unitPrice * item.quantity)) *
+              100
+            ).toFixed(2),
+            discountAmount: item.discountAmount,
+            exclusiveAmount:
+              item.unitPrice * item.quantity -
+              item.discountAmount,
+            vatAmount: 0,
+            totalAmount: item.lineTotal,
+          })
+        );
+
+        setRows(mappedRows);
+
+      } catch (error) {
+
+        console.error(
+          "Failed to load Sales Order data",
+          error
+        );
+      }
+    };
+
+    loadSalesOrderData();
+
   }, [salesOrderID]);
 
   // Calculate row data and total information in the controls 
@@ -629,11 +669,11 @@ const SalesInvoices: React.FC = () => {
             >
               <option value="">Create Without Sales Order</option>
 
-              {salesOrderList.map((so) => (
-                <option key={so.salesOrderID} value={so.salesOrderID}>
-                  {so.salesOrderNo}
-                </option>
-              ))}
+            {salesOrderList?.map((so) => (
+              <option key={so.salesOrderID} value={so.salesOrderID}>
+                {so.salesOrderNo}
+              </option>
+            ))}
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
             />
