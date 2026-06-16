@@ -76,7 +76,7 @@ const emptyRow = (id: number): SalesInvoiceRow => ({
 
 const SalesInvoices: React.FC = () => {
   const today = new Date();
-  const [salesInvoiceDate, setSalesInvoiceDate] = useState<Date>(today);
+  const [salesInvoiceDate, setSalesInvoiceDate] = useState<Date | null>(today);
   const [referenceNo, setReferenceNo] = useState("");
   const [salesInvoiceNo, setSalesInvoiceNo] = useState<string>("");
   const [rows, setRows] = useState<SalesInvoiceRow[]>([emptyRow(1)]);
@@ -112,22 +112,30 @@ const SalesInvoices: React.FC = () => {
   const copyId = searchParams.get("copyId");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!id || customers.length === 0) return;
 
-    loadSalesInvoice();
-
-  }, [id, customers]);
 
   const loadSalesInvoice = async () => {
     try {
+      // 🔒 Guard: prevent calling API with invalid id
+      if (!id) {
+        console.warn("Sales Invoice ID is missing");
+        return;
+      }
+
       const res = await api.get(`/api/salesinvoices/${id}`);
 
       console.log("SalesInvoice Data:", res.data);
 
       const data = res.data;
 
-      // ✅ set customer
+      if (!data) {
+        console.warn("No invoice data returned");
+        return;
+      }
+
+      // ===============================
+      // ✅ CUSTOMER SETUP
+      // ===============================
       const customer = customers.find(
         (c) => c.customerID === data.customerID
       );
@@ -138,14 +146,36 @@ const SalesInvoices: React.FC = () => {
         setCreditLimit(customer.creditLimit);
       }
 
-      // ✅ set header info
-      setSalesInvoiceDate(new Date(data.salesOrderDate));
+      // ===============================
+      // ✅ SAFE DATE HANDLING (FIXED)
+      // ===============================
+      let parsedDate: Date | null = null;
 
+      if (data.salesOrderDate) {
+        const tempDate = new Date(data.salesOrderDate);
+
+        if (!isNaN(tempDate.getTime())) {
+          parsedDate = tempDate;
+        }
+      }
+
+      setSalesInvoiceDate(parsedDate);
+
+      // ===============================
+      // ✅ HEADER FIELDS
+      // ===============================
       setReferenceNo(data.referenceNo || "");
       setRemarks(data.remarks || "");
 
-      // ✅ map items to rows
-      const mappedRows = data.items.map((item: any, index: number) => ({
+      // ===============================
+      // ✅ ITEMS SAFE MAPPING
+      // ===============================
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      console.log("Items from API:", data.items);
+
+      const mappedRows = items.map((item: any, index: number) => ({
+
         rowId: index + 1,
         itemID: item.itemID,
         itemCode: item.itemCode ?? "",
@@ -159,17 +189,22 @@ const SalesInvoices: React.FC = () => {
         discountAmount: item.discountAmount ?? 0,
         totalAmount: item.totalAmount ?? 0,
         exclusiveAmount: item.exclusiveAmount ?? 0,
-        amount: item.totalAmount ?? 0
+        amount: item.totalAmount ?? 0,
       }));
 
-      if (mappedRows.length > 0) {
-        setRows(mappedRows);
-      }
+      setRows(mappedRows);
 
-    } catch (error) {
-      console.error("Load error:", error);
+    } catch (error: any) {
+      console.error("Load error:", error?.response?.data || error.message);
     }
   };
+
+    useEffect(() => {
+    if (!id || customers.length === 0) return;
+
+    loadSalesInvoice();
+
+  }, [id, customers]);
 
   // Load vat rates dropdown list
   useEffect(() => {
@@ -564,12 +599,9 @@ const SalesInvoices: React.FC = () => {
         state: { highlightId: newSalesInvoiceID }
       });
 
-    } catch (error) {
-
-      console.error("❌ Failed to save sales invoice", error);
-
-      toast.error("Failed to save sales invoice");
-
+    } catch (error: any) {
+      console.error("Status:", error?.response?.status);
+      console.error("Response:", error?.response?.data);
     }
   };
 
