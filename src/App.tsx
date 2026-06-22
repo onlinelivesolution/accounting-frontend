@@ -23,7 +23,11 @@ import SalesInvoices from "./Components/SalesInvoices";
 import VerifyOTP from "./Components/VerifyOTP";
 import ViewCustomerReceipt from "./Components/ViewCustomerReceipts";
 import CustomerReceipt from "./Components/CustomerReceipts";
-
+import TenantManagement from "./Components/TenantManagement";
+import RegisterTenant from "./Components/RegisterTenant";
+import AdminProtectedRoute from "./Components/AdminProtectedRoute";
+import AdminLogin from "./Components/AdminLogin";
+import AdminVerifyOTP from "./Components/AdminVerifyOTP";
 import AccountingRuleSettings from "./Components/AccountingRulSettings";
 import AddNewAccount from "./Components/AddNewAccount";
 import Employee from "./Components/Employees";
@@ -258,6 +262,7 @@ const App: React.FC = () => {
       items.push({ name: "Sales Order", path: "/sales-orders", category: "Accounts" });
       items.push({ name: "Sales Invoice", path: "/sales-invoices", category: "Accounts" });
       items.push({ name: "Customer Receipt", path: "/customer-receipts", category: "Accounts" });
+      items.push({ name: "Manage Tenant", path: "/admin/manage-tenants", category: "Accounts" });
       items.push({ name: "Accounting Setting", path: "/accounting-settings", category: "Accounts" });
 
       items.push({ name: "Balance Sheet", path: "/BalanceSheet", category: "Accounts" });
@@ -593,6 +598,30 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+
+          <Route
+              path="/register-tenant"
+              element={<RegisterTenant />}
+          />
+
+          <Route
+              path="/admin/manage-tenants"
+              element={
+                  <AdminProtectedRoute>
+                      <TenantManagement/>
+                  </AdminProtectedRoute>
+              }
+          />
+
+          <Route
+              path="/admin/login"
+              element={<AdminLogin/>}
+              />
+
+              <Route
+              path="/admin/verify-otp"
+              element={<AdminVerifyOTP/>}
+              />
 
           <Route
             path="/customer-receipts/:id/edit"
