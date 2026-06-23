@@ -1,237 +1,344 @@
 import { useEffect, useState } from "react";
 import {
-    getPendingTenants,
-    updateTenantStatus
+  getAllTenants,
+  updateTenantStatus,
+  getTenantById,
 } from "../services/managetenantService";
 
 export default function TenantManagement() {
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-    const [tenants, setTenants] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
+  const [tenantDetails, setTenantDetails] = useState<any>(null);
 
-    const [selectedTenant, setSelectedTenant] = useState<any>(null);
-    const [status, setStatus] = useState("");
+  const [selectedTenant, setSelectedTenant] = useState<any>(null);
+  const [status, setStatus] = useState("");
 
-    const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
-    const loadTenants = async () => {
-        try {
-            setLoading(true);
+  const [searchText, setSearchText] = useState("");
 
-            const res = await getPendingTenants();
+  const [statusFilter, setStatusFilter] = useState("All");
 
-            setTenants(res.data);
+  const [currentPage, setCurrentPage] = useState(1);
 
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const itemsPerPage = 5;
 
-    useEffect(() => {
-        loadTenants();
-    }, []);
+  const loadTenants = async () => {
+    try {
+      setLoading(true);
 
-    // Open modal
-    const handleEditClick = (tenant: any) => {
-        setSelectedTenant(tenant);
-        setStatus(tenant.status);
-        setShowModal(true);
-    };
+      const res = await getAllTenants();
 
-    // Save status
-    const handleSave = async () => {
-        try {
+      setTenants(res.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            await updateTenantStatus(
-                selectedTenant.tenantID,
-                status
-            );
+  useEffect(() => {
+    loadTenants();
+  }, []);
 
-            alert("Status updated successfully");
+  const handleViewDetails = async (tenantID: number) => {
+    try {
+      const res = await getTenantById(tenantID);
 
-            setShowModal(false);
-            setSelectedTenant(null);
+      setTenantDetails(res.data);
 
-            loadTenants();
+      setShowDetailsModal(true);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-        } catch (error: any) {
-            console.log(error);
-            alert("Failed to update status");
-        }
-    };
+  // Open modal
+  const handleEditClick = (tenant: any) => {
+    setSelectedTenant(tenant);
+    setStatus(tenant.status);
+    setShowModal(true);
+  };
 
-    const getStatusBadge = (status: string) => {
+  // Save status
+  const handleSave = async () => {
+    try {
+      await updateTenantStatus(selectedTenant.tenantID, status);
 
-        switch(status?.toLowerCase()) {
+      alert("Status updated successfully");
 
-            case "approved":
-                return (
-                    <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                        Approved
-                    </span>
-                );
+      setShowModal(false);
+      setSelectedTenant(null);
 
-            case "pending":
-                return (
-                    <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-sm font-medium">
-                        Pending
-                    </span>
-                );
+      loadTenants();
+    } catch (error: any) {
+      console.log(error);
+      alert("Failed to update status");
+    }
+  };
 
-            case "rejected":
-                return (
-                    <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium">
-                        Rejected
-                    </span>
-                );
+  const getStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return (
+          <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+            Approved
+          </span>
+        );
 
-            case "suspended":
-                return (
-                    <span className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-sm font-medium">
-                        Suspended
-                    </span>
-                );
+      case "pending":
+        return (
+          <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-sm font-medium">
+            Pending
+          </span>
+        );
 
-            default:
-                return (
-                    <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
-                        {status}
-                    </span>
-                );
-        }
-    };
+      case "rejected":
+        return (
+          <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium">
+            Rejected
+          </span>
+        );
 
-    return (
-        <div className="p-6">
+      case "suspended":
+        return (
+          <span className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-sm font-medium">
+            Suspended
+          </span>
+        );
 
-            <h1 className="text-2xl font-bold mb-4">
-                Tenant Management
-            </h1>
+      default:
+        return (
+          <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+            {status}
+          </span>
+        );
+    }
+  };
 
-            {loading && <p>Loading...</p>}
+  const filteredTenants = tenants.filter((t) => {
+    const searchMatch =
+      t.companyName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      t.tenantName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      t.email?.toLowerCase().includes(searchText.toLowerCase());
 
-            <table className="w-full border">
+    const statusMatch = statusFilter === "All" || t.status === statusFilter;
 
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th className="border p-2">ID</th>
-                        <th className="border p-2">Company</th>
-                        <th className="border p-2">Email</th>
-                        <th className="border p-2">Status</th>
-                        <th className="border p-2">Action</th>
-                    </tr>
-                </thead>
+    return searchMatch && statusMatch;
+  });
 
-                <tbody>
+  const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
 
-                    {tenants.map((t) => (
-                        <tr key={t.tenantID}>
+  const startIndex = (currentPage - 1) * itemsPerPage;
 
-                            <td className="border p-2">
-                                {t.tenantID}
-                            </td>
+  const paginatedTenants = filteredTenants.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
-                            <td className="border p-2">
-                                {t.companyName}
-                            </td>
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Tenant Management</h1>
 
-                            <td className="border p-2">
-                                {t.email}
-                            </td>
+      {loading && <p>Loading...</p>}
+      <div className="flex gap-4 mb-4">
+        <input
+          type="text"
+          placeholder="Search company, tenant or email..."
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
 
-                            <td className="border p-2">
-                                {getStatusBadge(t.status)}
-                            </td>
+            setCurrentPage(1);
+          }}
+          className="border p-2 rounded w-72"
+        />
 
-                            {/* ACTION DROPDOWN */}
-                            <td className="border p-2 relative">
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
 
-                                <div className="group inline-block">
+            setCurrentPage(1);
+          }}
+          className="border p-2 rounded"
+        >
+          <option value="All">All Status</option>
 
-                                    <button className="bg-gray-500 text-white px-3 py-1 rounded">
-                                        Actions ▼
-                                    </button>
+          <option value="Pending">Pending</option>
 
-                                    <div className="hidden group-hover:block absolute bg-white border shadow-lg mt-1 z-10">
+          <option value="Approved">Approved</option>
 
-                                        <button
-                                            onClick={() => handleEditClick(t)}
-                                            className="block px-4 py-2 hover:bg-gray-200 w-full text-left"
-                                        >
-                                            Edit Status
-                                        </button>
+          <option value="Rejected">Rejected</option>
 
-                                        <button className="block px-4 py-2 hover:bg-gray-200 w-full text-left">
-                                            View Details
-                                        </button>
+          <option value="Suspended">Suspended</option>
+        </select>
+      </div>
+      <table className="w-full border">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="border p-2">ID</th>
+            <th className="border p-2">Company</th>
+            <th className="border p-2">Email</th>
+            <th className="border p-2">Status</th>
+            <th className="border p-2">Action</th>
+          </tr>
+        </thead>
 
-                                    </div>
+        <tbody>
+          {paginatedTenants.map((t) => (
+            <tr key={t.tenantID}>
+              <td className="border p-2">{t.tenantID}</td>
 
-                                </div>
+              <td className="border p-2">{t.companyName}</td>
 
-                            </td>
+              <td className="border p-2">{t.email}</td>
 
-                        </tr>
-                    ))}
+              <td className="border p-2">{getStatusBadge(t.status)}</td>
 
-                </tbody>
+              {/* ACTION DROPDOWN */}
+              <td className="border p-2 relative">
+                <div className="group inline-block">
+                  <button className="bg-gray-500 text-white px-3 py-1 rounded">
+                    Actions ▼
+                  </button>
 
-            </table>
+                  <div className="hidden group-hover:block absolute bg-white border shadow-lg mt-1 z-10">
+                    <button
+                      onClick={() => handleEditClick(t)}
+                      className="block px-4 py-2 hover:bg-gray-200 w-full text-left"
+                    >
+                      Edit Status
+                    </button>
 
-            {/* MODAL */}
-            {showModal && selectedTenant && (
-
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-
-                    <div className="bg-white p-6 rounded w-96">
-
-                        <h2 className="text-xl font-bold mb-4">
-                            Update Tenant Status
-                        </h2>
-
-                        <p className="mb-2">
-                            Company: {selectedTenant.companyName}
-                        </p>
-
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="border p-2 w-full mb-4"
-                        >
-
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approve</option>
-                            <option value="Rejected">Reject</option>
-                            <option value="Suspended">Suspend</option>
-
-                        </select>
-
-                        <div className="flex justify-end gap-2">
-
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="bg-gray-400 text-white px-4 py-2 rounded"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                onClick={handleSave}
-                                className="bg-green-500 text-white px-4 py-2 rounded"
-                            >
-                                Save
-                            </button>
-
-                        </div>
-
-                    </div>
-
+                    <button
+                      onClick={() => handleViewDetails(t.tenantID)}
+                      className="block px-4 py-2 hover:bg-gray-200 w-full text-left"
+                    >
+                      View Details
+                    </button>
+                  </div>
                 </div>
-
-            )}
-
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="flex justify-between items-center mt-4">
+        <div>
+          Showing {filteredTenants.length === 0 ? 0 : startIndex + 1}-
+          {Math.min(startIndex + itemsPerPage, filteredTenants.length)}
+          of {filteredTenants.length}
+          tenants
         </div>
-    );
+
+        <div className="flex gap-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span className="px-3 py-1">
+            {currentPage}/{totalPages || 1}
+          </span>
+
+          <button
+            disabled={currentPage === totalPages || totalPages === 0}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+      {/* MODAL */}
+      {showModal && selectedTenant && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded w-96">
+            <h2 className="text-xl font-bold mb-4">Update Tenant Status</h2>
+
+            <p className="mb-2">Company: {selectedTenant.companyName}</p>
+
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="border p-2 w-full mb-4"
+            >
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approve</option>
+              <option value="Rejected">Reject</option>
+              <option value="Suspended">Suspend</option>
+            </select>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="bg-gray-400 text-white px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSave}
+                className="bg-green-500 text-white px-4 py-2 rounded"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDetailsModal && tenantDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white rounded p-6 w-[500px]">
+            <h2 className="text-xl font-bold mb-4">Tenant Details</h2>
+
+            <div className="space-y-2">
+              <p>
+                <strong>Company:</strong> {tenantDetails.companyName}
+              </p>
+
+              <p>
+                <strong>Tenant Name:</strong> {tenantDetails.tenantName}
+              </p>
+
+              <p>
+                <strong>Admin Name:</strong> {tenantDetails.adminName}
+              </p>
+
+              <p>
+                <strong>Email:</strong> {tenantDetails.email}
+              </p>
+
+              <p>
+                <strong>Status:</strong> {tenantDetails.status}
+              </p>
+
+              <p>
+                <strong>Database:</strong> {tenantDetails.databaseName}
+              </p>
+
+              <p>
+                <strong>Created:</strong> {tenantDetails.createdDate}
+              </p>
+            </div>
+
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

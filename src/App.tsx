@@ -1,12 +1,7 @@
 // src/App.tsx
 import React, { useEffect, useState, useRef } from "react";
 import logo from "../public/logo.png";
-import {
-  Routes,
-  Route,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Menu, X } from "lucide-react";
 import DepositWithdraw from "./Components/DepositWithdraw";
@@ -40,7 +35,7 @@ import { useAuth } from "./Components/securityContext";
 import PayscaleMappings from "./Components/PayScaleMappings";
 import UserInfos from "./Components/UserInfo";
 import PermissionAssign from "./Components/RolePermissionAssign";
-
+import AdminDashboard from "./Components/AdminDashboard";
 
 // ------- Types -------
 interface MenuItem {
@@ -96,11 +91,16 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
       <button
         onClick={() => onToggle(category)}
         aria-expanded={isOpen}
-        className={`flex items-center px-3 py-2 transition rounded ${activeParent ? "text-blue-700 text-[10px] bg-blue-50" : "text-gray-700 hover:text-blue-600"
-          }`}
+        className={`flex items-center px-3 py-2 transition rounded ${
+          activeParent
+            ? "text-blue-700 text-[10px] bg-blue-50"
+            : "text-gray-700 hover:text-blue-600"
+        }`}
       >
         <span className="select-none">{label}</span>
-        <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`ml-2 h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       <AnimatePresence>
@@ -155,7 +155,12 @@ const sidebarVariants = {
   open: { x: 0 },
 };
 
-const MobileSidebar: React.FC<MobileSidebarProps> = ({ open, onClose, menuItems, onNavigate }) => {
+const MobileSidebar: React.FC<MobileSidebarProps> = ({
+  open,
+  onClose,
+  menuItems,
+  onNavigate,
+}) => {
   return (
     <AnimatePresence>
       {open && (
@@ -200,9 +205,13 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ open, onClose, menuItems,
                   </button>
                 ))}
 
-              {Array.from(new Set(menuItems.map((m) => m.category).filter(Boolean))).map((cat) => (
+              {Array.from(
+                new Set(menuItems.map((m) => m.category).filter(Boolean)),
+              ).map((cat) => (
                 <div key={cat}>
-                  <div className="mt-3 mb-1 text-[10px] text-gray-500">{cat}</div>
+                  <div className="mt-3 mb-1 text-[10px] text-gray-500">
+                    {cat}
+                  </div>
                   <div className="flex flex-col">
                     {menuItems
                       .filter((m) => m.category === cat)
@@ -251,50 +260,148 @@ const App: React.FC = () => {
 
     const items: MenuItem[] = [];
 
-    if (hasPermission("Dashboard", "View")) items.push({ name: "Dashboard", path: "/dashboard" });
+    if (hasPermission("Dashboard", "View"))
+      items.push({ name: "Dashboard", path: "/dashboard" });
 
     if (hasPermission("Accounts", "Add Account")) {
-      items.push({ name: "Journal Entry", path: "/journalEntry", category: "Accounts" });
-      items.push({ name: "Bank Account", path: "/bankAccounts", category: "Accounts" });
-      items.push({ name: "Add New Account", path: "/addNewAccount", category: "Accounts" });
-      items.push({ name: "Bank Transaction", path: "/depositWithdraw", category: "Accounts" });
-      items.push({ name: "Quotation", path: "/ViewQuotations", category: "Accounts" });
-      items.push({ name: "Sales Order", path: "/sales-orders", category: "Accounts" });
-      items.push({ name: "Sales Invoice", path: "/sales-invoices", category: "Accounts" });
-      items.push({ name: "Customer Receipt", path: "/customer-receipts", category: "Accounts" });
-      items.push({ name: "Manage Tenant", path: "/admin/manage-tenants", category: "Accounts" });
-      items.push({ name: "Accounting Setting", path: "/accounting-settings", category: "Accounts" });
+      items.push({
+        name: "Journal Entry",
+        path: "/journalEntry",
+        category: "Accounts",
+      });
+      items.push({
+        name: "Bank Account",
+        path: "/bankAccounts",
+        category: "Accounts",
+      });
+      items.push({
+        name: "Add New Account",
+        path: "/addNewAccount",
+        category: "Accounts",
+      });
+      items.push({
+        name: "Bank Transaction",
+        path: "/depositWithdraw",
+        category: "Accounts",
+      });
+      items.push({
+        name: "Quotation",
+        path: "/ViewQuotations",
+        category: "Accounts",
+      });
+      items.push({
+        name: "Sales Order",
+        path: "/sales-orders",
+        category: "Accounts",
+      });
+      items.push({
+        name: "Sales Invoice",
+        path: "/sales-invoices",
+        category: "Accounts",
+      });
+      items.push({
+        name: "Customer Receipt",
+        path: "/customer-receipts",
+        category: "Accounts",
+      });
+      items.push({
+        name: "Manage Tenant",
+        path: "/admin/manage-tenants",
+        category: "Accounts",
+      });
 
-      items.push({ name: "Balance Sheet", path: "/BalanceSheet", category: "Accounts" });
+      items.push({
+        name: "Dashboard",
+        path: "/admin/dashboard",
+        category: "Admin",
+      });
+      items.push({
+        name: "Accounting Setting",
+        path: "/accounting-settings",
+        category: "Accounts",
+      });
+
+      items.push({
+        name: "Balance Sheet",
+        path: "/BalanceSheet",
+        category: "Accounts",
+      });
     }
 
     if (hasPermission("Quotations", "Add Quotation")) {
-      items.push({ name: "Quotation", path: "/quotations", category: "Quotations" });
+      items.push({
+        name: "Quotation",
+        path: "/quotations",
+        category: "Quotations",
+      });
     }
 
     if (hasPermission("Employees", "Add Employee")) {
-      items.push({ name: "Employee", path: "/employees", category: "Employee" });
-      items.push({ name: "Payscale Mapping", path: "/payScaleMappings", category: "Employee" });
-
+      items.push({
+        name: "Employee",
+        path: "/employees",
+        category: "Employee",
+      });
+      items.push({
+        name: "Payscale Mapping",
+        path: "/payScaleMappings",
+        category: "Employee",
+      });
     }
 
     if (hasPermission("Salary", "Add Employee")) {
-      items.push({ name: "Generate Salary", path: "/generateSalary", category: "Salary" });
-      items.push({ name: "Generate Bonus", path: "/GenerateBonuses", category: "Salary" });
-      items.push({ name: "Approve Salary", path: "/approveSalary", category: "Salary" });
+      items.push({
+        name: "Generate Salary",
+        path: "/generateSalary",
+        category: "Salary",
+      });
+      items.push({
+        name: "Generate Bonus",
+        path: "/GenerateBonuses",
+        category: "Salary",
+      });
+      items.push({
+        name: "Approve Salary",
+        path: "/approveSalary",
+        category: "Salary",
+      });
     }
 
     // Financial
     if (hasPermission("Financial", "View")) {
-      items.push({ name: "Salary", path: "/financial/salary", category: "Financial" });
-      items.push({ name: "Bonus", path: "/financial/bonus", category: "Financial" });
-      items.push({ name: "Expense", path: "/financial/expense", category: "Financial" });
-      items.push({ name: "Payment", path: "/financial/payment", category: "Financial" });
+      items.push({
+        name: "Salary",
+        path: "/financial/salary",
+        category: "Financial",
+      });
+      items.push({
+        name: "Bonus",
+        path: "/financial/bonus",
+        category: "Financial",
+      });
+      items.push({
+        name: "Expense",
+        path: "/financial/expense",
+        category: "Financial",
+      });
+      items.push({
+        name: "Payment",
+        path: "/financial/payment",
+        category: "Financial",
+      });
     }
 
     if (hasPermission("User", "Update User")) {
-      items.push({ name: "Manage User", path: "/manageUser", category: "User" });
-      items.push({ name: "Manage Permission", path: "/managePermission", category: "User" });
+      items.push({
+        name: "Manage User",
+        path: "/manageUser",
+        category: "User",
+      });
+      items.push({
+        name: "Manage Permission",
+        path: "/managePermission",
+        category: "User",
+      });
     }
 
     setMenuItems(items);
@@ -336,7 +443,10 @@ const App: React.FC = () => {
       {/* Header */}
       {user && (
         <header className="bg-white shadow-md px-2 py-2 flex items-center justify-between md:px-6">
-          <div className="flex items-center space-x-4 md:space-x-6" ref={menuRef}>
+          <div
+            className="flex items-center space-x-4 md:space-x-6"
+            ref={menuRef}
+          >
             <div className="flex items-center">
               <img
                 src={logo}
@@ -357,8 +467,11 @@ const App: React.FC = () => {
                   <button
                     key={i.path}
                     onClick={() => navigateAndClose(i.path)}
-                    className={`px-3 py-2 rounded transition ${location.pathname === i.path ? "text-blue-700 font-semibold bg-blue-50" : "text-gray-700 hover:text-blue-600"
-                      }`}
+                    className={`px-3 py-2 rounded transition ${
+                      location.pathname === i.path
+                        ? "text-blue-700 font-semibold bg-blue-50"
+                        : "text-gray-700 hover:text-blue-600"
+                    }`}
                   >
                     {i.name}
                   </button>
@@ -419,7 +532,9 @@ const App: React.FC = () => {
 
           {/* Right side: logout + mobile menu button */}
           <div className="flex items-center space-x-3">
-            <span className="hidden md:inline text-gray-700 font-medium">{user.userName}</span>
+            <span className="hidden md:inline text-gray-700 font-medium">
+              {user.userName}
+            </span>
             <button
               onClick={() => {
                 logout();
@@ -432,7 +547,10 @@ const App: React.FC = () => {
 
             {/* mobile button */}
             <div className="md:hidden">
-              <button onClick={() => setMobileOpen(true)} aria-label="Open menu">
+              <button
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open menu"
+              >
                 <Menu />
               </button>
             </div>
@@ -446,7 +564,9 @@ const App: React.FC = () => {
         onClose={() => setMobileOpen(false)}
         menuItems={menuItems}
         onNavigate={navigateAndClose}
-        hasPermission={hasPermission as unknown as (a: string, b: string) => boolean}
+        hasPermission={
+          hasPermission as unknown as (a: string, b: string) => boolean
+        }
       />
 
       {/* Main area */}
@@ -469,17 +589,22 @@ const App: React.FC = () => {
           <Route
             path="/journalEntry"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <JournalEntry />
               </ProtectedRoute>
             }
           />
 
-
           <Route
             path="/ViewQuotations"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <ViewQuotation />
               </ProtectedRoute>
             }
@@ -488,7 +613,10 @@ const App: React.FC = () => {
           <Route
             path="/Quotations"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <Quotations />
               </ProtectedRoute>
             }
@@ -497,7 +625,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-orders"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <ViewSalesOrder />
               </ProtectedRoute>
             }
@@ -506,7 +637,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-orders/new"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <SalesOrders />
               </ProtectedRoute>
             }
@@ -515,7 +649,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-orders/:id/edit"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <SalesOrders />
               </ProtectedRoute>
             }
@@ -524,7 +661,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-orders/:id/copy"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <SalesOrders />
               </ProtectedRoute>
             }
@@ -533,7 +673,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-orders/:id/view"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <ViewSalesOrder />
               </ProtectedRoute>
             }
@@ -542,7 +685,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-invoices"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <SalesInvoiceView />
               </ProtectedRoute>
             }
@@ -550,7 +696,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-invoices/new"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <SalesInvoices />
               </ProtectedRoute>
             }
@@ -559,7 +708,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-invoices/:id/edit"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <SalesInvoices />
               </ProtectedRoute>
             }
@@ -568,7 +720,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-invoices/:id/copy"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <SalesInvoices />
               </ProtectedRoute>
             }
@@ -577,7 +732,10 @@ const App: React.FC = () => {
           <Route
             path="/sales-invoices/:id/view"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <SalesInvoiceView />
               </ProtectedRoute>
             }
@@ -585,7 +743,10 @@ const App: React.FC = () => {
           <Route
             path="/customer-receipts"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <ViewCustomerReceipt />
               </ProtectedRoute>
             }
@@ -593,40 +754,44 @@ const App: React.FC = () => {
           <Route
             path="/customer-receipts/new"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <CustomerReceipt />
               </ProtectedRoute>
             }
           />
 
+          <Route path="/register-tenant" element={<RegisterTenant />} />
+
           <Route
-              path="/register-tenant"
-              element={<RegisterTenant />}
+            path="/admin/manage-tenants"
+            element={
+              <AdminProtectedRoute>
+                <TenantManagement />
+              </AdminProtectedRoute>
+            }
           />
-
           <Route
-              path="/admin/manage-tenants"
-              element={
-                  <AdminProtectedRoute>
-                      <TenantManagement/>
-                  </AdminProtectedRoute>
-              }
+            path="/admin/dashboard"
+            element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
+            }
           />
+          <Route path="/admin/login" element={<AdminLogin />} />
 
-          <Route
-              path="/admin/login"
-              element={<AdminLogin/>}
-              />
-
-              <Route
-              path="/admin/verify-otp"
-              element={<AdminVerifyOTP/>}
-              />
+          <Route path="/admin/verify-otp" element={<AdminVerifyOTP />} />
 
           <Route
             path="/customer-receipts/:id/edit"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <CustomerReceipt />
               </ProtectedRoute>
             }
@@ -635,7 +800,10 @@ const App: React.FC = () => {
           <Route
             path="/customer-receipts/:id/copy"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <CustomerReceipt />
               </ProtectedRoute>
             }
@@ -644,7 +812,10 @@ const App: React.FC = () => {
           <Route
             path="/customer-receipts/:id/view"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <ViewCustomerReceipt />
               </ProtectedRoute>
             }
@@ -653,7 +824,10 @@ const App: React.FC = () => {
           <Route
             path="/accounting-settings"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <AccountingRuleSettings />
               </ProtectedRoute>
             }
@@ -662,7 +836,10 @@ const App: React.FC = () => {
           <Route
             path="/BalanceSheet"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <BalanceSheet />
               </ProtectedRoute>
             }
@@ -671,7 +848,10 @@ const App: React.FC = () => {
           <Route
             path="/BankAccounts"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <BankAccounts />
               </ProtectedRoute>
             }
@@ -680,7 +860,10 @@ const App: React.FC = () => {
           <Route
             path="/AddNewAccount"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <AddNewAccount />
               </ProtectedRoute>
             }
@@ -688,17 +871,22 @@ const App: React.FC = () => {
           <Route
             path="/DepositWithdraw"
             element={
-              <ProtectedRoute permissionName="Accounts" actionName="Add Account">
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
                 <DepositWithdraw />
               </ProtectedRoute>
             }
           />
 
-
           <Route
             path="/employees"
             element={
-              <ProtectedRoute permissionName="Employees" actionName="Add Employee">
+              <ProtectedRoute
+                permissionName="Employees"
+                actionName="Add Employee"
+              >
                 <Employee />
               </ProtectedRoute>
             }
@@ -707,7 +895,10 @@ const App: React.FC = () => {
           <Route
             path="/payScaleMappings"
             element={
-              <ProtectedRoute permissionName="Employees" actionName="Add Employee">
+              <ProtectedRoute
+                permissionName="Employees"
+                actionName="Add Employee"
+              >
                 <PayscaleMappings />
               </ProtectedRoute>
             }

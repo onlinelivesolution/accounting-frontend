@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const LoginUser: React.FC = () => {
-
   const [username, setUsername] = useState("");
 
   const [password, setPassword] = useState("");
@@ -16,80 +15,66 @@ const LoginUser: React.FC = () => {
 
   const navigate = useNavigate();
 
-
-
   const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-      e.preventDefault();
+    setErrorMessage("");
 
-      setErrorMessage("");
+    setLoading(true);
 
-      setLoading(true);
+    try {
+      const payload = {
+        userName: username.trim(),
+        password: password,
+      };
 
-      try {
+      console.log("LOGIN PAYLOAD:", payload);
 
-          const payload = {
-              userName: username.trim(),
-              password: password,
-          };
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/auth/login",
+        payload,
+      );
 
-          console.log("LOGIN PAYLOAD:", payload);
+      console.log("LOGIN RESPONSE:", response.data);
 
-          const response = await axios.post(
-              "http://127.0.0.1:8000/api/auth/login",
-              payload
-          );
+      console.log("NAVIGATING WITH STATE:", {
+        userID: response.data.userID,
+        tenant: response.data.tenant,
+        otp: response.data.otp,
+      });
 
-          console.log("LOGIN RESPONSE:", response.data);
+      navigate("/verify-otp", {
+        state: {
+          userID: response.data.userID,
+          tenant: response.data.tenant,
+          otp: response.data.otp,
+        },
+      });
+    } catch (error: any) {
+      console.error("LOGIN ERROR:", error);
 
-          console.log("NAVIGATING WITH STATE:", {
-              userID: response.data.userID,
-              tenant: response.data.tenant,
-              otp: response.data.otp,
-          });
+      console.log("SERVER RESPONSE:", error.response?.data);
 
-          navigate("/verify-otp", {
-              state: {
-                  userID: response.data.userID,
-                  tenant: response.data.tenant,
-                  otp: response.data.otp,
-              },
-          });
-
-      } catch (error: any) {
-
-          console.error("LOGIN ERROR:", error);
-
-          console.log("SERVER RESPONSE:", error.response?.data);
-
-          if (error.response?.data?.detail) {
-
-              setErrorMessage(
-                  typeof error.response.data.detail === "string"
-                      ? error.response.data.detail
-                      : "Login failed"
-              );
-
-          } else {
-
-              setErrorMessage("Invalid username or password");
-          }
-
-      } finally {
-
-          setLoading(false);
+      if (error.response?.data?.detail) {
+        setErrorMessage(
+          typeof error.response.data.detail === "string"
+            ? error.response.data.detail
+            : "Login failed",
+        );
+      } else {
+        setErrorMessage("Invalid username or password");
       }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-
       <form
         onSubmit={handleLogin}
         className="bg-white p-8 rounded-xl shadow-lg w-96"
       >
-
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-700">
           Online Accounting
         </h2>
@@ -103,7 +88,6 @@ const LoginUser: React.FC = () => {
 
         {/* Username */}
         <div className="mb-4">
-
           <label className="block mb-1 text-sm font-medium text-gray-600">
             Username
           </label>
@@ -122,16 +106,13 @@ const LoginUser: React.FC = () => {
               focus:ring-blue-500
             "
             value={username}
-            onChange={(e) =>
-              setUsername(e.target.value)
-            }
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
         </div>
 
         {/* Password */}
         <div className="mb-6">
-
           <label className="block mb-1 text-sm font-medium text-gray-600">
             Password
           </label>
@@ -150,9 +131,7 @@ const LoginUser: React.FC = () => {
               focus:ring-blue-500
             "
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
@@ -169,19 +148,16 @@ const LoginUser: React.FC = () => {
             font-semibold
             transition-all
             duration-200
-            ${loading
-              ? "bg-blue-300 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
+            ${
+              loading
+                ? "bg-blue-300 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
             }
           `}
         >
-
           {loading ? "Please wait..." : "Login"}
-
         </button>
-
       </form>
-
     </div>
   );
 };

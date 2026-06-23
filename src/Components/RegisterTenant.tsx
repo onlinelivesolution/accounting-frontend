@@ -3,211 +3,150 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axiosClient";
 
 export default function RegisterTenant() {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    companyName: "",
+    adminName: "",
+    databaseName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-    const [formData, setFormData] = useState({
-        companyName: "",
-        adminName: "",
-        databaseName: "",
-        email: "",
-        password: "",
-        confirmPassword: ""
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
     });
+  };
 
-    const [loading, setLoading] = useState(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
+    if (formData.password !== formData.confirmPassword) {
+      alert("Password does not match");
+      return;
+    }
 
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+    try {
+      setLoading(true);
 
-    };
+      const payload = {
+        companyName: formData.companyName,
+        adminName: formData.adminName,
+        databaseName: formData.databaseName,
+        email: formData.email,
+        password: formData.password,
+      };
 
-    const handleSubmit = async (
-        e: React.FormEvent
-    ) => {
+      console.log("Tenant Register Payload:", payload);
 
-        e.preventDefault();
+      const res = await api.post("/managetenants/registerTenant", payload);
 
-        if (
-            formData.password !==
-            formData.confirmPassword
-        ) {
-            alert("Password does not match");
-            return;
-        }
+      console.log("Register Response:", res.data);
 
-        try {
+      alert("Registration successful. Waiting for approval.");
 
-            setLoading(true);
+      navigate("/login");
+    } catch (error: any) {
+      console.log(error);
 
-            const payload = {
-                companyName: formData.companyName,
-                adminName: formData.adminName,
-                databaseName: formData.databaseName,
-                email: formData.email,
-                password: formData.password 
-            };
+      alert(error?.response?.data?.detail || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            console.log(
-                "Tenant Register Payload:",
-                payload
-            );
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-6">
+          Tenant Registration
+        </h2>
 
-            const res = await api.post(
-                "/tenant/register",
-                payload
-            );
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            name="companyName"
+            placeholder="Company Name"
+            value={formData.companyName}
+            onChange={handleChange}
+            required
+            className="w-full border rounded p-2"
+          />
 
-            console.log(
-                "Register Response:",
-                res.data
-            );
+          <input
+            type="text"
+            name="adminName"
+            placeholder="Admin Name"
+            value={formData.adminName}
+            onChange={handleChange}
+            required
+            className="w-full border rounded p-2"
+          />
 
-            alert(
-                "Registration successful. Waiting for approval."
-            );
+          <input
+            type="text"
+            name="databaseName"
+            placeholder="Database Name"
+            value={formData.databaseName}
+            onChange={handleChange}
+            required
+            className="w-full border rounded p-2"
+          />
 
-            navigate("/login");
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            className="w-full border rounded p-2"
+          />
 
-        }
-        catch(error:any){
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            className="w-full border rounded p-2"
+          />
 
-            console.log(error);
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            className="w-full border rounded p-2"
+          />
 
-            alert(
-                error?.response?.data?.detail ||
-                "Registration failed"
-            );
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          >
+            {loading ? "Registering..." : "Register"}
+          </button>
+        </form>
 
-        }
-        finally{
-
-            setLoading(false);
-
-        }
-
-    };
-
-    return (
-
-<div className="min-h-screen bg-gray-100 flex items-center justify-center">
-
-<div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-
-<h2 className="text-2xl font-bold text-center mb-6">
-
-Tenant Registration
-
-</h2>
-
-<form
-onSubmit={handleSubmit}
-className="space-y-4"
->
-
-<input
-type="text"
-name="companyName"
-placeholder="Company Name"
-value={formData.companyName}
-onChange={handleChange}
-required
-className="w-full border rounded p-2"
-/>
-
-<input
-type="text"
-name="adminName"
-placeholder="Admin Name"
-value={formData.adminName}
-onChange={handleChange}
-required
-className="w-full border rounded p-2"
-/>
-
-<input
-type="text"
-name="databaseName"
-placeholder="Database Name"
-value={formData.databaseName}
-onChange={handleChange}
-required
-className="w-full border rounded p-2"
-/>
-
-<input
-type="email"
-name="email"
-placeholder="Email"
-value={formData.email}
-onChange={handleChange}
-required
-className="w-full border rounded p-2"
-/>
-
-<input
-type="password"
-name="password"
-placeholder="Password"
-value={formData.password}
-onChange={handleChange}
-required
-className="w-full border rounded p-2"
-/>
-
-<input
-type="password"
-name="confirmPassword"
-placeholder="Confirm Password"
-value={formData.confirmPassword}
-onChange={handleChange}
-required
-className="w-full border rounded p-2"
-/>
-
-<button
-type="submit"
-disabled={loading}
-className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
->
-
-{
-loading
-?
-"Registering..."
-:
-"Register"
-}
-
-</button>
-
-</form>
-
-<div className="mt-4 text-center">
-
-Already registered?
-
-<button
-onClick={() => navigate("/login")}
-className="text-blue-600 ml-2"
->
-
-Login
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-    );
-
+        <div className="mt-4 text-center">
+          Already registered?
+          <button
+            onClick={() => navigate("/login")}
+            className="text-blue-600 ml-2"
+          >
+            Login
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
