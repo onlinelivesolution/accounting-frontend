@@ -14,10 +14,18 @@ export const updateTenantStatus = async (tenantID: number, status: string) => {
   });
 };
 
-export const approveTenant = async (tenantID: number) => {
+export const approveTenantB = async (tenantID: number) => {
   return await api.put(`/api/tenants/approve/${tenantID}`);
 };
 
 export const getTenantById = async (tenantID: number) => {
   return await api.get(`/managetenants/getTenantById/${tenantID}`);
+};
+
+export const approveTenant = async (tenantId: number) => {
+  const response = await api.put(
+    `/managetenants/approveTenant/${tenantId}`
+  );
+
+  return response.data;
 };

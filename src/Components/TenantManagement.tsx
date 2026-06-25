@@ -3,13 +3,14 @@ import {
   getAllTenants,
   updateTenantStatus,
   getTenantById,
+  approveTenant,
 } from "../services/managetenantService";
 
 export default function TenantManagement() {
   const [tenants, setTenants] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<number | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-
+  
   const [tenantDetails, setTenantDetails] = useState<any>(null);
 
   const [selectedTenant, setSelectedTenant] = useState<any>(null);
@@ -27,15 +28,12 @@ export default function TenantManagement() {
 
   const loadTenants = async () => {
     try {
-      setLoading(true);
-
       const res = await getAllTenants();
 
       setTenants(res.data);
+
     } catch (error) {
       console.log(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -76,6 +74,23 @@ export default function TenantManagement() {
     } catch (error: any) {
       console.log(error);
       alert("Failed to update status");
+    }
+  };
+
+  const handleApprove = async (tenantId: number) => {
+    try {
+      setLoading(tenantId);
+
+      const res = await approveTenant(tenantId);
+
+      console.log(res);
+
+      await loadTenants();
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(null);
     }
   };
 
@@ -188,15 +203,15 @@ export default function TenantManagement() {
         </thead>
 
         <tbody>
-          {paginatedTenants.map((t) => (
-            <tr key={t.tenantID}>
-              <td className="border p-2">{t.tenantID}</td>
+          {paginatedTenants.map((tenant) => (
+            <tr key={tenant.tenantID}>
+              <td className="border p-2">{tenant.tenantID}</td>
 
-              <td className="border p-2">{t.companyName}</td>
+              <td className="border p-2">{tenant.companyName}</td>
 
-              <td className="border p-2">{t.email}</td>
+              <td className="border p-2">{tenant.email}</td>
 
-              <td className="border p-2">{getStatusBadge(t.status)}</td>
+              <td className="border p-2">{getStatusBadge(tenant.status)}</td>
 
               {/* ACTION DROPDOWN */}
               <td className="border p-2 relative">
@@ -207,14 +222,21 @@ export default function TenantManagement() {
 
                   <div className="hidden group-hover:block absolute bg-white border shadow-lg mt-1 z-10">
                     <button
-                      onClick={() => handleEditClick(t)}
+                      onClick={() => handleApprove(tenant.tenantID)}
+                      disabled={loading === tenant.tenantID}
+                      className="block px-4 py-2 hover:bg-gray-200 w-full text-left"
+                    >
+                      {loading === tenant.tenantID ? "Approving..." : "Approve"}
+                    </button>
+                    <button
+                      onClick={() => handleEditClick(tenant)}
                       className="block px-4 py-2 hover:bg-gray-200 w-full text-left"
                     >
                       Edit Status
                     </button>
 
                     <button
-                      onClick={() => handleViewDetails(t.tenantID)}
+                      onClick={() => handleViewDetails(tenant.tenantID)}
                       className="block px-4 py-2 hover:bg-gray-200 w-full text-left"
                     >
                       View Details

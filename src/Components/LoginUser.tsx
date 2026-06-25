@@ -24,29 +24,23 @@ const LoginUser: React.FC = () => {
 
     try {
       const payload = {
-        userName: username.trim(),
+        username: username.trim(),
         password: password,
       };
 
       console.log("LOGIN PAYLOAD:", payload);
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/auth/login",
+        "http://127.0.0.1:8000/api/tenantauth/tenantLogin",
         payload,
       );
 
       console.log("LOGIN RESPONSE:", response.data);
 
-      console.log("NAVIGATING WITH STATE:", {
-        userID: response.data.userID,
-        tenant: response.data.tenant,
-        otp: response.data.otp,
-      });
-
+      // Navigate to OTP page
       navigate("/verify-otp", {
         state: {
-          userID: response.data.userID,
-          tenant: response.data.tenant,
+          username: username.trim(),
           otp: response.data.otp,
         },
       });
@@ -79,16 +73,32 @@ const LoginUser: React.FC = () => {
           Online Accounting
         </h2>
 
-        {/* Error Message */}
         {errorMessage && (
-          <div className="mb-4 bg-red-100 border border-red-300 text-red-700 px-3 py-2 rounded text-sm">
+          <div
+            className="
+                        mb-4
+                        bg-red-100
+                        border
+                        border-red-300
+                        text-red-700
+                        px-3
+                        py-2
+                        rounded
+                        text-sm"
+          >
             {errorMessage}
           </div>
         )}
 
-        {/* Username */}
         <div className="mb-4">
-          <label className="block mb-1 text-sm font-medium text-gray-600">
+          <label
+            className="
+                        block
+                        mb-1
+                        text-sm
+                        font-medium
+                        text-gray-600"
+          >
             Username
           </label>
 
@@ -96,24 +106,29 @@ const LoginUser: React.FC = () => {
             type="text"
             placeholder="Enter username"
             className="
-              w-full
-              p-3
-              border
-              border-gray-300
-              rounded-lg
-              focus:outline-none
-              focus:ring-2
-              focus:ring-blue-500
-            "
+                        w-full
+                        p-3
+                        border
+                        border-gray-300
+                        rounded-lg
+                        focus:outline-none
+                        focus:ring-2
+                        focus:ring-blue-500"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
           />
         </div>
 
-        {/* Password */}
         <div className="mb-6">
-          <label className="block mb-1 text-sm font-medium text-gray-600">
+          <label
+            className="
+                        block
+                        mb-1
+                        text-sm
+                        font-medium
+                        text-gray-600"
+          >
             Password
           </label>
 
@@ -121,39 +136,37 @@ const LoginUser: React.FC = () => {
             type="password"
             placeholder="Enter password"
             className="
-              w-full
-              p-3
-              border
-              border-gray-300
-              rounded-lg
-              focus:outline-none
-              focus:ring-2
-              focus:ring-blue-500
-            "
+                        w-full
+                        p-3
+                        border
+                        border-gray-300
+                        rounded-lg
+                        focus:outline-none
+                        focus:ring-2
+                        focus:ring-blue-500"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
 
-        {/* Login Button */}
         <button
           type="submit"
           disabled={loading}
           className={`
-            w-full
-            p-3
-            rounded-lg
-            text-white
-            font-semibold
-            transition-all
-            duration-200
-            ${
-              loading
-                ? "bg-blue-300 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }
-          `}
+                        w-full
+                        p-3
+                        rounded-lg
+                        text-white
+                        font-semibold
+                        transition-all
+                        duration-200
+                        ${
+                          loading
+                            ? "bg-blue-300 cursor-not-allowed"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        }
+                    `}
         >
           {loading ? "Please wait..." : "Login"}
         </button>

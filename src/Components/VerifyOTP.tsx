@@ -3,197 +3,123 @@ import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./securityContext";
 
-
 const VerifyOTP: React.FC = () => {
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-    const [otp, setOtp] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-    const location = useLocation();
-    const navigate = useNavigate();
-    const { login } = useAuth();
+  const username = location.state?.username;
+  const otpFromLogin = location.state?.otp;
 
-    const userID = location.state?.userID;
-    const tenant = location.state?.tenant;
-    const otpFromLogin = location.state?.otp;
+  const handleVerifyOTP = async () => {
+    if (!username) {
+      setErrorMessage("Session expired. Please login again.");
 
-    const handleVerifyOTP = async () => {
+      navigate("/");
 
-        if (!userID) {
+      return;
+    }
 
-            setErrorMessage(
-                "Session expired. Please login again."
-            );
+    try {
+      setLoading(true);
 
-            navigate("/");
+      setErrorMessage("");
 
-            return;
-        }
+      console.log("VERIFY PAYLOAD:", {
+        username,
+        otp,
+      });
 
-        try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/tenantauth/verifyOTP",
+        {
+          username: username,
+          otp: otp.trim(),
+        },
+      );
 
-            setLoading(true);
+      console.log("VERIFY RESPONSE:", response.data);
 
-            setErrorMessage("");
+      const token = response.data.access_token;
 
-            // =========================
-            // VERIFY OTP
-            // =========================
-            console.log("VERIFY PAYLOAD:", {
-                userID,
-                tenant,
-                otpCode: otp.trim()
-            });
+      if (!token) {
+        setErrorMessage("Token not found");
 
-            const response = await axios.post(
-                "http://127.0.0.1:8000/api/auth/verify-otp",
-                {
-                    userID: userID,
-                    tenant: tenant,
-                    otpCode: otp.trim()
-                }
-            );
+        return;
+      }
 
-            console.log(
-                "VERIFY OTP RESPONSE:",
-                response.data
-            );
+      // Save token
+      localStorage.setItem("token", token);
 
-            const {
-                token,
-                user
-            } = response.data;
+      localStorage.setItem("username", username);
 
-            // =========================
-            // VALIDATE RESPONSE
-            // =========================
+      // optional if securityContext exists
+      const permissionResponse = await axios.get(
+        `http://127.0.0.1:8000/api/tenantauth/permissions/${username}`,
+      );
 
-            if (!token || !user) {
+      console.log("FULL PERMISSION RESPONSE:", permissionResponse);
 
-                setErrorMessage(
-                    "Invalid server response"
-                );
+      const permissions = permissionResponse.data;
 
-                return;
-            }
+      console.log("PERMISSIONS DATA:", permissions);
 
-            // =========================
-            // FETCH PERMISSIONS
-            // =========================
+      const user = {
+        userName: username,
+      };
 
-            let permissions: any[] = [];
+      login(token, null, user, permissions);
 
-            try {
+      console.log("LOCAL STORAGE:", localStorage.getItem("permissions"));
+      
+      navigate("/dashboard", {
+        replace: true,
+      });
+    } catch (error: any) {
+      console.log(error);
 
-                const permissionsResponse =
-                    await axios.get(
-                        `http://127.0.0.1:8000/api/auth/permissions/${user.roleID}`
-                    );
+      setErrorMessage(
+        error.response?.data?.detail || "OTP verification failed",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                console.log(
-                    "PERMISSIONS RESPONSE:",
-                    permissionsResponse.data
-                );
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-96">
+        <h2 className="text-2xl font-bold mb-6 text-center">Verify OTP</h2>
 
-                permissions =
-                    permissionsResponse.data || [];
-
-            } catch (permissionError) {
-
-                console.error(
-                    "PERMISSION API ERROR:",
-                    permissionError
-                );
-
-                // allow login even if permission api fails
-                permissions = [];
-            }
-
-            // =========================
-            // LOGIN
-            // =========================
-
-            login(token, response.data.tenant, user, permissions);
-
-            // =========================
-            // NAVIGATE
-            // =========================
-
-            navigate("/dashboard");
-
-        } 
-        catch (error: any) {
-
-            console.error("VERIFY OTP ERROR:", error);
-
-            console.log("FULL RESPONSE:", error.response);
-
-            console.log("DATA:", error.response?.data);
-
-            if (error.response?.data?.detail) {
-
-                if (Array.isArray(error.response.data.detail)) {
-                    setErrorMessage(
-                        JSON.stringify(error.response.data.detail)
-                    );
-                } else {
-                    setErrorMessage(
-                        error.response.data.detail
-                    );
-                }
-
-            } else {
-
-                setErrorMessage(
-                    error.message || "OTP verification failed"
-                );
-            }
-
-        } finally {
-
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-
-            <div className="bg-white p-8 rounded-xl shadow-lg w-96">
-
-                <h2 className="text-2xl font-bold mb-6 text-center">
-                    Verify OTP
-                </h2>
-
-                {errorMessage && (
-                    <div className="mb-4 text-red-600 text-sm">
-                        {errorMessage}
-                    </div>
-                )}
-                <div className="mb-4 text-center text-green-600 font-bold">
-                   Development OTP: {otpFromLogin}
-                </div>
-
-                <input
-                    type="text"
-                    placeholder="Enter OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg mb-4"
-                />
-
-                <button
-                    onClick={handleVerifyOTP}
-                    disabled={loading}
-                    className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"
-                >
-                    {loading ? "Verifying..." : "Verify OTP"}
-                </button>
-
-            </div>
-
+        {errorMessage && (
+          <div className="mb-4 text-red-600 text-sm">{errorMessage}</div>
+        )}
+        <div className="mb-4 text-center text-green-600 font-bold">
+          Development OTP: {otpFromLogin}
         </div>
-    );
+
+        <input
+          type="text"
+          placeholder="Enter OTP"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg mb-4"
+        />
+
+        <button
+          onClick={handleVerifyOTP}
+          disabled={loading}
+          className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"
+        >
+          {loading ? "Verifying..." : "Verify OTP"}
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default VerifyOTP;
