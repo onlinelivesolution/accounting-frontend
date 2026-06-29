@@ -42,45 +42,36 @@ const VerifyOTP: React.FC = () => {
         },
       );
 
-      console.log("VERIFY RESPONSE:", response.data);
+      console.log("FULL VERIFY RESPONSE:", response.data);
 
-      const token = response.data.access_token;
+      const { token, user, permissions, tenant } = response.data;
 
-      if (!token) {
-        setErrorMessage("Token not found");
+      console.log("TOKEN:", token);
+
+      console.log("USER:", user);
+
+      console.log("PERMISSIONS:", permissions);
+
+      if (!token || !user) {
+        setErrorMessage("Invalid server response");
 
         return;
       }
 
-      // Save token
-      localStorage.setItem("token", token);
+      // save through security context
+      login(token, tenant || "", user, permissions || []);
 
-      localStorage.setItem("username", username);
+      console.log("LOCAL USER:", localStorage.getItem("user"));
 
-      // optional if securityContext exists
-      const permissionResponse = await axios.get(
-        `http://127.0.0.1:8000/api/tenantauth/permissions/${username}`,
-      );
+      console.log("LOCAL TOKEN:", localStorage.getItem("token"));
 
-      console.log("FULL PERMISSION RESPONSE:", permissionResponse);
+      console.log("LOCAL PERMISSIONS:", localStorage.getItem("permissions"));
 
-      const permissions = permissionResponse.data;
-
-      console.log("PERMISSIONS DATA:", permissions);
-
-      const user = {
-        userName: username,
-      };
-
-      login(token, null, user, permissions);
-
-      console.log("LOCAL STORAGE:", localStorage.getItem("permissions"));
-      
       navigate("/dashboard", {
         replace: true,
       });
     } catch (error: any) {
-      console.log(error);
+      console.log("VERIFY ERROR:", error);
 
       setErrorMessage(
         error.response?.data?.detail || "OTP verification failed",

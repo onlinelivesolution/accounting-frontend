@@ -242,7 +242,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
 // Main App
 // ---------------------
 const App: React.FC = () => {
-  const { user, hasPermission, logout } = useAuth();
+  const { user, permissions, hasPermission, logout } = useAuth();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -258,63 +258,81 @@ const App: React.FC = () => {
       return;
     }
 
+    console.log("USER:", user);
+    console.log("PERMISSIONS:", permissions);
+
     const items: MenuItem[] = [];
 
-    if (hasPermission("Dashboard", "View"))
-      items.push({ name: "Dashboard", path: "/dashboard" });
+    // Dashboard
+    if (user?.isSuperAdmin || hasPermission("Dashboard", "View")) {
+      items.push({
+        name: "Dashboard",
+        path: "/dashboard",
+      });
+    }
 
-    if (hasPermission("Accounts", "Add Account")) {
+    // Accounts
+    if (user?.isSuperAdmin || hasPermission("Accounts", "Add Account")) {
       items.push({
         name: "Journal Entry",
         path: "/journalEntry",
         category: "Accounts",
       });
+
       items.push({
         name: "Bank Account",
         path: "/bankAccounts",
         category: "Accounts",
       });
+
       items.push({
         name: "Add New Account",
         path: "/addNewAccount",
         category: "Accounts",
       });
+
       items.push({
         name: "Bank Transaction",
         path: "/depositWithdraw",
         category: "Accounts",
       });
+
       items.push({
         name: "Quotation",
         path: "/ViewQuotations",
         category: "Accounts",
       });
+
       items.push({
         name: "Sales Order",
         path: "/sales-orders",
         category: "Accounts",
       });
+
       items.push({
         name: "Sales Invoice",
         path: "/sales-invoices",
         category: "Accounts",
       });
+
       items.push({
         name: "Customer Receipt",
         path: "/customer-receipts",
         category: "Accounts",
       });
+
       items.push({
         name: "Manage Tenant",
         path: "/admin/manage-tenants",
-        category: "Accounts",
+        category: "Admin",
       });
 
       items.push({
-        name: "Dashboard",
+        name: "Admin Dashboard",
         path: "/admin/dashboard",
         category: "Admin",
       });
+
       items.push({
         name: "Accounting Setting",
         path: "/accounting-settings",
@@ -328,7 +346,8 @@ const App: React.FC = () => {
       });
     }
 
-    if (hasPermission("Quotations", "Add Quotation")) {
+    // Quotations
+    if (user?.isSuperAdmin || hasPermission("Quotations", "Add Quotation")) {
       items.push({
         name: "Quotation",
         path: "/quotations",
@@ -336,12 +355,14 @@ const App: React.FC = () => {
       });
     }
 
-    if (hasPermission("Employees", "Add Employee")) {
+    // Employee
+    if (user?.isSuperAdmin || hasPermission("Employees", "Add Employee")) {
       items.push({
         name: "Employee",
         path: "/employees",
         category: "Employee",
       });
+
       items.push({
         name: "Payscale Mapping",
         path: "/payScaleMappings",
@@ -349,17 +370,20 @@ const App: React.FC = () => {
       });
     }
 
-    if (hasPermission("Salary", "Add Employee")) {
+    // Salary
+    if (user?.isSuperAdmin || hasPermission("Salary", "Add Employee")) {
       items.push({
         name: "Generate Salary",
         path: "/generateSalary",
         category: "Salary",
       });
+
       items.push({
         name: "Generate Bonus",
         path: "/GenerateBonuses",
         category: "Salary",
       });
+
       items.push({
         name: "Approve Salary",
         path: "/approveSalary",
@@ -368,22 +392,25 @@ const App: React.FC = () => {
     }
 
     // Financial
-    if (hasPermission("Financial", "View")) {
+    if (user?.isSuperAdmin || hasPermission("Financial", "View")) {
       items.push({
         name: "Salary",
         path: "/financial/salary",
         category: "Financial",
       });
+
       items.push({
         name: "Bonus",
         path: "/financial/bonus",
         category: "Financial",
       });
+
       items.push({
         name: "Expense",
         path: "/financial/expense",
         category: "Financial",
       });
+
       items.push({
         name: "Payment",
         path: "/financial/payment",
@@ -391,12 +418,14 @@ const App: React.FC = () => {
       });
     }
 
-    if (hasPermission("User", "Update User")) {
+    // User
+    if (user?.isSuperAdmin || hasPermission("User", "Update User")) {
       items.push({
         name: "Manage User",
         path: "/manageUser",
         category: "User",
       });
+
       items.push({
         name: "Manage Permission",
         path: "/managePermission",

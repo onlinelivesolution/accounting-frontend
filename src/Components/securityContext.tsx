@@ -11,7 +11,9 @@ interface Permission {
 interface User {
   userID?: number;
   userName?: string;
+  email?: string;
   roleID?: number;
+  isSuperAdmin?: boolean;
 }
 
 interface AuthContextType {
@@ -112,12 +114,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     permissionName: string,
     actionName: string,
   ): boolean => {
-    if (!permissions || permissions.length === 0) return false;
+    // System Admin
+    if (user?.isSuperAdmin === true) {
+      return true;
+    }
+
+    // Tenant Admin
+    // First created admin user in tenant DB
+    if (user?.roleID === 1 || user?.userName === user?.email) {
+      return true;
+    }
+
+    if (!permissions || permissions.length === 0) {
+      return false;
+    }
 
     return permissions.some(
       (p) =>
         p.permissionName?.toLowerCase() === permissionName.toLowerCase() &&
-        p.actionName?.toLowerCase() === actionName.toLowerCase(),
+        p.actionName?.toLowerCase() === actionName.toLowerCase() &&
+        p.isAllowed === true,
     );
   };
 

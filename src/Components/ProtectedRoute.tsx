@@ -1,12 +1,13 @@
 // src/Components/ProtectedRoute.tsx
-import React, { ReactNode } from "react";
+
+import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "./securityContext";
 
 interface ProtectedRouteProps {
-  children: ReactNode;
-  permissionName?: string;
-  actionName?: string;
+  children: React.ReactNode;
+  permissionName: string;
+  actionName: string;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
@@ -14,24 +15,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   permissionName,
   actionName,
 }) => {
-  const { user, hasPermission, token } = useAuth();
+  const { user, token, hasPermission } = useAuth();
 
-  // 🔒 1️⃣ Redirect if not logged in
-  if (!token || !user) {
-    return <Navigate to="/" replace />;
+  // Not logged in
+  if (!token) {
+    return <Navigate to="/login" replace />;
   }
 
-  // ✅ 2️⃣ Allow if user has permission OR no specific permission required
-  if (
-    !permissionName ||
-    !actionName ||
-    hasPermission(permissionName, actionName)
-  ) {
+  // System Admin gets full access
+  if (user?.isSuperAdmin) {
     return <>{children}</>;
   }
 
-  // 🚫 3️⃣ Otherwise redirect to Unauthorized page
-  return <Navigate to="/unauthorized" replace />;
+  // Normal users use permission check
+  const allowed = hasPermission(permissionName, actionName);
+
+  if (!allowed) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
