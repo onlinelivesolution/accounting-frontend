@@ -92,21 +92,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // LOGOUT
   const logout = () => {
+    const isSuperAdmin = user?.isSuperAdmin;
+
     setToken(null);
-
     setTenant(null);
-
     setUser(null);
-
     setPermissions([]);
 
     localStorage.removeItem("token");
-
     localStorage.removeItem("tenant");
-
     localStorage.removeItem("user");
-
     localStorage.removeItem("permissions");
+
+    if (isSuperAdmin) {
+      window.location.href = "/admin/login";
+    } else {
+      window.location.href = "/";
+    }
   };
 
   // PERMISSION CHECK

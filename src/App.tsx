@@ -242,7 +242,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
 // Main App
 // ---------------------
 const App: React.FC = () => {
-  const { user, permissions, hasPermission, logout } = useAuth();
+  const { user, hasPermission, logout } = useAuth();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -257,9 +257,6 @@ const App: React.FC = () => {
       setMenuItems([]);
       return;
     }
-
-    console.log("USER:", user);
-    console.log("PERMISSIONS:", permissions);
 
     const items: MenuItem[] = [];
 
@@ -319,18 +316,6 @@ const App: React.FC = () => {
         name: "Customer Receipt",
         path: "/customer-receipts",
         category: "Accounts",
-      });
-
-      items.push({
-        name: "Manage Tenant",
-        path: "/admin/manage-tenants",
-        category: "Admin",
-      });
-
-      items.push({
-        name: "Admin Dashboard",
-        path: "/admin/dashboard",
-        category: "Admin",
       });
 
       items.push({
@@ -433,6 +418,20 @@ const App: React.FC = () => {
       });
     }
 
+    // Manage Tenant
+    if (user?.isSuperAdmin) {
+      items.push({
+        name: "Admin Dashboard",
+        path: "/admin/dashboard",
+        category: "Admin",
+      });
+
+      items.push({
+        name: "Manage Tenant",
+        path: "/admin/manage-tenants",
+        category: "Admin",
+      });
+    }
     setMenuItems(items);
   }, [user, hasPermission]);
 
@@ -506,56 +505,21 @@ const App: React.FC = () => {
                   </button>
                 ))}
 
-              {/* Dropdowns */}
-              <DropdownMenu
-                label="Manage Accounts"
-                category="Accounts"
-                menuItems={menuItems}
-                isOpen={dropdownOpen === "Accounts"}
-                onToggle={(c) => toggleDropdown(c)}
-                onNavigate={navigateAndClose}
-                activeParent={activeParent() === "Accounts"}
-              />
-
-              <DropdownMenu
-                label="Employee"
-                category="Employee"
-                menuItems={menuItems}
-                isOpen={dropdownOpen === "Employee"}
-                onToggle={(c) => toggleDropdown(c)}
-                onNavigate={navigateAndClose}
-                activeParent={activeParent() === "Employee"}
-              />
-
-              <DropdownMenu
-                label="Salary"
-                category="Salary"
-                menuItems={menuItems}
-                isOpen={dropdownOpen === "Salary"}
-                onToggle={(c) => toggleDropdown(c)}
-                onNavigate={navigateAndClose}
-                activeParent={activeParent() === "Salary"}
-              />
-
-              <DropdownMenu
-                label="Financial"
-                category="Financial"
-                menuItems={menuItems}
-                isOpen={dropdownOpen === "Financial"}
-                onToggle={(c) => toggleDropdown(c)}
-                onNavigate={navigateAndClose}
-                activeParent={activeParent() === "Financial"}
-              />
-
-              <DropdownMenu
-                label="Manage User"
-                category="User"
-                menuItems={menuItems}
-                isOpen={dropdownOpen === "User"}
-                onToggle={(c) => toggleDropdown(c)}
-                onNavigate={navigateAndClose}
-                activeParent={activeParent() === "User"}
-              />
+              {/* Dynamic Dropdowns */}
+              {Array.from(
+                new Set(menuItems.map((item) => item.category).filter(Boolean)),
+              ).map((category) => (
+                <DropdownMenu
+                  key={category}
+                  label={category!}
+                  category={category!}
+                  menuItems={menuItems}
+                  isOpen={dropdownOpen === category}
+                  onToggle={toggleDropdown}
+                  onNavigate={navigateAndClose}
+                  activeParent={activeParent() === category}
+                />
+              ))}
             </nav>
           </div>
 
@@ -605,15 +569,6 @@ const App: React.FC = () => {
           <Route path="/login" element={<LoginUser />} />
 
           <Route path="/verify-otp" element={<VerifyOTP />} />
-
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute permissionName="Dashboard" actionName="View">
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
 
           <Route
             path="/journalEntry"
@@ -802,14 +757,14 @@ const App: React.FC = () => {
               </AdminProtectedRoute>
             }
           />
-          <Route
+          {/* <Route
             path="/admin/dashboard"
             element={
               <AdminProtectedRoute>
                 <AdminDashboard />
               </AdminProtectedRoute>
             }
-          />
+          /> */}
           <Route path="/admin/login" element={<AdminLogin />} />
 
           <Route path="/admin/verify-otp" element={<AdminVerifyOTP />} />
