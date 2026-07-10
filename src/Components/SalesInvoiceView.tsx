@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
-import { ChevronDown, Download, Trash2, MoreVertical, Mail } from "lucide-react";
+import {
+  ChevronDown,
+  Download,
+  Trash2,
+  MoreVertical,
+  Mail,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import ConfirmModal from "@/Components/common/ConfirmModal";
@@ -59,7 +64,9 @@ const SalesInvoiceView: React.FC = () => {
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const [selectedSalesInvoices, setSelectedSalesInvoices] = useState<number[]>([]);
+  const [selectedSalesInvoices, setSelectedSalesInvoices] = useState<number[]>(
+    [],
+  );
   const [selectAll, setSelectAll] = useState(false);
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [details, setDetails] = useState<Record<number, any[]>>({});
@@ -77,21 +84,25 @@ const SalesInvoiceView: React.FC = () => {
   const [confirmId, setConfirmId] = useState<number | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [copySalesInvoiceId, setCopySalesInvoiceId] = useState<number | null>(null);
+  const [copySalesInvoiceId, setCopySalesInvoiceId] = useState<number | null>(
+    null,
+  );
   const [approveModalOpen, setApproveModalOpen] = useState(false);
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(
+    null,
+  );
 
   const location = useLocation();
   const highlightId = location.state?.highlightId ?? null;
   const rowRefs = useRef<{ [key: number]: HTMLTableRowElement | null }>({});
 
   const handleConfirmCopy = async () => {
-
     if (!copySalesInvoiceId) return;
 
     try {
-
-      const res = await api.post(`/api/salesinvoices/${copySalesInvoiceId}/copy`);
+      const res = await api.post(
+        `/api/salesinvoices/${copySalesInvoiceId}/copy`,
+      );
 
       const newId = res.data.salesInvoiceID;
 
@@ -101,15 +112,11 @@ const SalesInvoiceView: React.FC = () => {
 
       navigate("/sales-invoices", { state: { highlightId: newId } });
       fetchSalesInvoices();
-
     } catch (error) {
-
       console.error("Copy sales invoice failed", error);
       alert("Failed to copy sales invoice");
-
     }
   };
-
 
   const handleCancelCopy = () => {
     setConfirmOpen(false);
@@ -118,7 +125,6 @@ const SalesInvoiceView: React.FC = () => {
 
   const handleCopyInvoice = async (salesInvoiceID: number) => {
     try {
-
       const res = await api.post(`/api/salesinvoices/${salesInvoiceID}/copy`);
 
       const newId = res.data.salesInvoiceID;
@@ -136,89 +142,59 @@ const SalesInvoiceView: React.FC = () => {
     }
   };
 
-  // Load sales orders in grid
-  // const fetchSalesInvoices = async () => {
-  //   const res = await fetch(
-  //     `http://127.0.0.1:8000/api/salesinvoices/getSalesInvoiceFilters?filterType=${filterType}&salesInvoiceNo=${salesInvoiceNo}&page=${page}&pageSize=${pageSize}`
-  //   );
+  const fetchSalesInvoices = async () => {
+    try {
+      const response = await api.get(
+        "/api/salesinvoices/getSalesInvoiceFilters",
+        {
+          params: {
+            filterType,
+            salesInvoiceNo,
+            page,
+            pageSize,
+          },
+        },
+      );
 
-  //   const data = await res.json();
-  //   setSalesInvoices(data.items);
-  //   setTotal(data.total);
-  // };
+      setSalesInvoices(response.data.items);
+      setTotal(response.data.total);
+    } catch (error) {
+      console.error("Sales Order Load Error:", error);
+    }
+  };
 
-  // useEffect(() => {
-  //   fetchSalesInvoices();
-  // }, [filterType, page]);
-
-      const fetchSalesInvoices = async () => {
-
-        try {
-
-            const response = await api.get(
-                "/api/salesinvoices/getSalesInvoiceFilters",
-                {
-                    params: {
-                        filterType,
-                        salesInvoiceNo,
-                        page,
-                        pageSize,
-                    },
-                }
-            );
-
-            setSalesInvoices(response.data.items);
-            setTotal(response.data.total);
-
-        } catch (error) {
-
-            console.error("Sales Order Load Error:", error);
-        }
-    };
-
-    useEffect(() => {
-        fetchSalesInvoices();
-    }, [filterType, page]);
+  useEffect(() => {
+    fetchSalesInvoices();
+  }, [filterType, page]);
 
   // Highlight animation
   useEffect(() => {
-
     if (!highlightId) return;
 
     const row = rowRefs.current[highlightId];
 
     if (row) {
-
       row.scrollIntoView({
         behavior: "smooth",
-        block: "center"
+        block: "center",
       });
-
     }
-
   }, [highlightId]);
 
   // Keyboard shortcuts
   useEffect(() => {
-
     const handleKeyDown = (e: KeyboardEvent) => {
-
       // Ctrl + N → Create New Sales Invoice
       if (e.altKey && e.key.toLowerCase() === "n") {
-
         e.preventDefault();
         navigate("/sales-invoices/new");
-
       }
 
       // ESC → close dropdown
       if (e.key === "Escape") {
-
         setOpenDropdown(null);
         setConfirmId(null);
-
       }
-
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -226,13 +202,15 @@ const SalesInvoiceView: React.FC = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-
   }, []);
 
   // Handle click outside grid dropdown to close
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setOpenDropdown(null);
       }
     }
@@ -242,7 +220,6 @@ const SalesInvoiceView: React.FC = () => {
   }, []);
 
   useEffect(() => {
-
     const handleClickOutside = () => {
       setOpenDropdown(null);
       setConfirmId(null);
@@ -253,7 +230,6 @@ const SalesInvoiceView: React.FC = () => {
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-
   }, []);
 
   const toggleDropdown = (id: number) => {
@@ -279,7 +255,7 @@ const SalesInvoiceView: React.FC = () => {
     setSelectedSalesInvoices((prev) =>
       prev.includes(salesInvoiceID)
         ? prev.filter((id) => id !== salesInvoiceID)
-        : [...prev, salesInvoiceID]
+        : [...prev, salesInvoiceID],
     );
   };
 
@@ -294,35 +270,23 @@ const SalesInvoiceView: React.FC = () => {
   };
 
   // Expand sales order details
-  const toggleSalesInvoiceExpand = async (
-    salesInvoiceID: number
-  ) => {
-
-    setExpandedRows(prev =>
+  const toggleSalesInvoiceExpand = async (salesInvoiceID: number) => {
+    setExpandedRows((prev) =>
       prev.includes(salesInvoiceID)
-        ? prev.filter(id => id !== salesInvoiceID)
-        : [...prev, salesInvoiceID]
+        ? prev.filter((id) => id !== salesInvoiceID)
+        : [...prev, salesInvoiceID],
     );
 
     if (!details[salesInvoiceID]) {
-
       try {
+        const res = await api.get(`/api/salesinvoices/${salesInvoiceID}`);
 
-        const res = await api.get(
-          `/api/salesinvoices/${salesInvoiceID}`
-        );
-
-        setDetails(prev => ({
+        setDetails((prev) => ({
           ...prev,
-          [salesInvoiceID]: res.data.items
+          [salesInvoiceID]: res.data.items,
         }));
-
       } catch (error) {
-
-        console.error(
-          "Failed to load Sales Invoice details",
-          error
-        );
+        console.error("Failed to load Sales Invoice details", error);
       }
     }
   };
@@ -332,35 +296,40 @@ const SalesInvoiceView: React.FC = () => {
     if (!selectedInvoice) return;
 
     try {
-
-      await api.put(`/api/salesinvoices/updateSalesInvoiceStatus/${selectedInvoice.salesInvoiceID}`, {
-        status: status
-      });
+      await api.put(
+        `/api/salesinvoices/updateSalesInvoiceStatus/${selectedInvoice.salesInvoiceID}`,
+        {
+          status: status,
+        },
+      );
 
       toast.success("Status updated successfully");
 
       closeStatusModal();
 
       fetchSalesInvoices(); // reload list
-
     } catch (error) {
       console.error(error);
       toast.error("Failed to update status");
     }
   };
 
-
   const isAlreadyApproved = selectedInvoiceId
-    ? salesInvoices.find(si => si.salesInvoiceID === selectedInvoiceId)?.status === "Approved"
+    ? salesInvoices.find((si) => si.salesInvoiceID === selectedInvoiceId)
+        ?.status === "Approved"
     : false;
 
   const approveSalesInvoice = async (invoiceId: number) => {
     try {
-      const response = await api.put(`/api/salesinvoices/approveSalesInvoice/${invoiceId}`);
+      const response = await api.put(
+        `/api/salesinvoices/approveSalesInvoice/${invoiceId}`,
+      );
 
       // ✅ Use the response if needed
       if (response.status === 200) {
-        toast.success(response.data?.message || "Invoice approved successfully!");
+        toast.success(
+          response.data?.message || "Invoice approved successfully!",
+        );
         fetchSalesInvoices();
       } else {
         toast.error(response.data?.message || "Failed to approve invoice");
@@ -424,8 +393,7 @@ const SalesInvoiceView: React.FC = () => {
                 <option value="PENDING">Pending</option>
                 <option value="INVOICED">Invoiced</option>
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-              />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -442,12 +410,9 @@ const SalesInvoiceView: React.FC = () => {
           <button
             onClick={() => navigate("/sales-invoices/new")}
             className="min-w-[100px] h-[28px] bg-[#1c3c61] text-white text-[12px] rounded border border-blue-800 hover:bg-blue-800 hover:text-white cursor-pointer"
-
           >
             New Sales Invoice
           </button>
-
-
         </div>
 
         {/* Quotation List */}
@@ -464,10 +429,18 @@ const SalesInvoiceView: React.FC = () => {
                     onChange={handleSelectAllCheckBox}
                   />
                 </th>
-                <th className="w-[220px] p-2 text-left text-white">Customer Name</th>
-                <th className="w-[220px] p-2 text-left text-white">Sales Order No</th>
-                <th className="w-[220px] p-2 text-left text-white">Date Creation</th>
-                <th className="w-[220px] p-2 text-left text-white">Total Amount</th>
+                <th className="w-[220px] p-2 text-left text-white">
+                  Customer Name
+                </th>
+                <th className="w-[220px] p-2 text-left text-white">
+                  Sales Order No
+                </th>
+                <th className="w-[220px] p-2 text-left text-white">
+                  Date Creation
+                </th>
+                <th className="w-[220px] p-2 text-left text-white">
+                  Total Amount
+                </th>
                 <th className="w-[220px] p-2 text-left text-white">Status</th>
                 <th className="w-[100px] p-2 text-left text-white">Actions</th>
               </tr>
@@ -480,23 +453,34 @@ const SalesInvoiceView: React.FC = () => {
                   <React.Fragment key={si.salesInvoiceID}>
                     <tr
                       ref={(el) => (rowRefs.current[si.salesInvoiceID] = el)}
-                      className={`group relative border-b border-gray-300 hover:bg-gray-200 ${highlightId === si.salesInvoiceID ? "bg-green-200 animate-pulse" : ""
-                        }`}
+                      className={`group relative border-b border-gray-300 hover:bg-gray-200 ${
+                        highlightId === si.salesInvoiceID
+                          ? "bg-green-200 animate-pulse"
+                          : ""
+                      }`}
                     >
                       <td className="w-[50px] py-2 px-2 text-center border-b border-gray-400 border-l border-[#1c3c61]">
                         <div className="flex items-center gap-4">
                           <input
                             type="checkbox"
                             className="w-4 h-4 accent-[#1c3c61] cursor-pointer"
-                            checked={selectedSalesInvoices.includes(si.salesInvoiceID)}
-                            onChange={() => handleSelectIndividualCheckBox(si.salesInvoiceID)}
+                            checked={selectedSalesInvoices.includes(
+                              si.salesInvoiceID,
+                            )}
+                            onChange={() =>
+                              handleSelectIndividualCheckBox(si.salesInvoiceID)
+                            }
                           />
 
                           <button
                             className="w-4 h-4 flex items-center justify-center text-white text-lg pb-[5px] bg-[#1c3c61] rounded hover:bg-[#161f4d] cursor-pointer"
-                            onClick={() => toggleSalesInvoiceExpand(si.salesInvoiceID)}
+                            onClick={() =>
+                              toggleSalesInvoiceExpand(si.salesInvoiceID)
+                            }
                           >
-                            {expandedRows.includes(si.salesInvoiceID) ? "−" : "+"}
+                            {expandedRows.includes(si.salesInvoiceID)
+                              ? "−"
+                              : "+"}
                           </button>
                         </div>
                       </td>
@@ -506,7 +490,7 @@ const SalesInvoiceView: React.FC = () => {
                           {/* Circle Avatar */}
                           <div
                             className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-semibold ring-2 ring-green shadow ${getColorFromName(
-                              si.customerName
+                              si.customerName,
                             )}`}
                           >
                             {getInitial(si.customerName)}
@@ -535,11 +519,9 @@ const SalesInvoiceView: React.FC = () => {
 
                       <td className="w-[120px] p-2 border-b border-gray-400 relative">
                         <div className="flex justify-end items-center gap-2">
-
                           {/* ✅ FLOATING ICONS (NO ANIMATION) */}
                           {openDropdown !== si.salesInvoiceID && (
                             <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-gray/80 backdrop-blur-sm px-1 py-1 rounded shadow-sm">
-
                               {/* Download */}
                               <button
                                 onClick={() => handleDownload(si)}
@@ -554,22 +536,28 @@ const SalesInvoiceView: React.FC = () => {
                                 onClick={() => handleDelete(si.salesInvoiceID)}
                                 title="Delete"
                                 disabled={isApproved}
-                                className={`p-2 rounded-full ${isApproved
-                                  ? "text-gray-800 cursor-not-allowed"
-                                  : "text-gray-800 hover:bg-blue-200 cursor-pointer"
-                                  }`}
+                                className={`p-2 rounded-full ${
+                                  isApproved
+                                    ? "text-gray-800 cursor-not-allowed"
+                                    : "text-gray-800 hover:bg-blue-200 cursor-pointer"
+                                }`}
                               >
                                 <Trash2 className="w-5 h-5" />
                               </button>
                               {/* Mail */}
                               <button
                                 onClick={() => handleOpenEmailModal(si)}
-                                title={si.customerEmail ? "Send Mail" : "No Email Found"}
+                                title={
+                                  si.customerEmail
+                                    ? "Send Mail"
+                                    : "No Email Found"
+                                }
                                 disabled={!si.customerEmail}
-                                className={`p-2 rounded-full ${!si.customerEmail
+                                className={`p-2 rounded-full ${
+                                  !si.customerEmail
                                     ? "text-gray-800 cursor-not-allowed"
                                     : "text-gray-600 hover:bg-blue-200 cursor-pointer"
-                                  }`}
+                                }`}
                               >
                                 <Mail className="w-5 h-5" />
                               </button>
@@ -578,7 +566,11 @@ const SalesInvoiceView: React.FC = () => {
 
                           {/* ✅ Existing Dropdown (UNCHANGED LOGIC) */}
                           <div
-                            ref={openDropdown === si.salesInvoiceID ? dropdownRef : null}
+                            ref={
+                              openDropdown === si.salesInvoiceID
+                                ? dropdownRef
+                                : null
+                            }
                             onClick={(e) => e.stopPropagation()}
                             className="relative flex justify-end"
                           >
@@ -598,7 +590,6 @@ const SalesInvoiceView: React.FC = () => {
 
                             {openDropdown === si.salesInvoiceID && (
                               <div className="absolute right-0 top-7 w-40 bg-white border border-blue-400 shadow-md rounded z-50">
-
                                 {/* KEEP YOUR EXISTING BUTTONS EXACTLY SAME */}
                                 {/* (no changes inside this block) */}
 
@@ -606,12 +597,15 @@ const SalesInvoiceView: React.FC = () => {
                                   onClick={() => {
                                     if (isApproved) return;
                                     setOpenDropdown(null);
-                                    navigate(`/sales-invoices/${si.salesInvoiceID}/edit`);
+                                    navigate(
+                                      `/sales-invoices/${si.salesInvoiceID}/edit`,
+                                    );
                                   }}
-                                  className={`block w-full px-4 py-2 text-left text-[12px] ${isApproved
-                                    ? "text-gray-400 cursor-not-allowed"
-                                    : "hover:bg-blue-200 text-blue-700"
-                                    }`}
+                                  className={`block w-full px-4 py-2 text-left text-[12px] ${
+                                    isApproved
+                                      ? "text-gray-400 cursor-not-allowed"
+                                      : "hover:bg-blue-200 text-blue-700"
+                                  }`}
                                   disabled={isApproved}
                                 >
                                   Edit
@@ -631,10 +625,11 @@ const SalesInvoiceView: React.FC = () => {
                                     setApproveModalOpen(true);
                                     setOpenDropdown(null);
                                   }}
-                                  className={`block w-full px-4 py-2 text-left text-[12px] ${isApproved
-                                    ? "text-gray-400 cursor-not-allowed"
-                                    : "hover:bg-blue-200 text-blue-700"
-                                    }`}
+                                  className={`block w-full px-4 py-2 text-left text-[12px] ${
+                                    isApproved
+                                      ? "text-gray-400 cursor-not-allowed"
+                                      : "hover:bg-blue-200 text-blue-700"
+                                  }`}
                                   disabled={isApproved}
                                 >
                                   Approve Invoice
@@ -648,7 +643,9 @@ const SalesInvoiceView: React.FC = () => {
                                   className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
                                   onClick={() => {
                                     setOpenDropdown(null);
-                                    navigate(`/sales-orders/${si.salesInvoiceID}/view`);
+                                    navigate(
+                                      `/sales-orders/${si.salesInvoiceID}/view`,
+                                    );
                                   }}
                                 >
                                   View History
@@ -660,7 +657,9 @@ const SalesInvoiceView: React.FC = () => {
 
                                 <button
                                   className="block w-full px-4 py-2 text-left text-[12px] hover:bg-blue-200"
-                                  onClick={() => setConfirmId(si.salesInvoiceID)}
+                                  onClick={() =>
+                                    setConfirmId(si.salesInvoiceID)
+                                  }
                                 >
                                   Copy Invoice
                                 </button>
@@ -668,7 +667,9 @@ const SalesInvoiceView: React.FC = () => {
                                 <ConfirmPopover
                                   isOpen={confirmId === si.salesInvoiceID}
                                   message="Create the same another sales invoice?"
-                                  onConfirm={() => handleCopyInvoice(si.salesInvoiceID)}
+                                  onConfirm={() =>
+                                    handleCopyInvoice(si.salesInvoiceID)
+                                  }
                                   onCancel={() => {
                                     setConfirmId(null);
                                     setOpenDropdown(null);
@@ -679,7 +680,6 @@ const SalesInvoiceView: React.FC = () => {
                           </div>
                         </div>
                       </td>
-
                     </tr>
 
                     {/* ================= EXPANDED DETAIL ROW ================= */}
@@ -689,25 +689,51 @@ const SalesInvoiceView: React.FC = () => {
                           <table className="w-full text-xs border border-gray-400">
                             <thead className="bg-[#29588f] text-white">
                               <tr>
-                                <th className="w-[220px] p-2 text-left">Item Description</th>
-                                <th className="w-[220px] p-2 text-right">Quantity</th>
-                                <th className="w-[220px] p-2 text-right">Unit Price</th>
-                                <th className="w-[220px] p-2 text-right">Discount Amount</th>
-                                <th className="w-[220px] p-2 text-right">VAT Amount</th>
-                                <th className="w-[220px] p-2 text-right">Line Total</th>
+                                <th className="w-[220px] p-2 text-left">
+                                  Item Description
+                                </th>
+                                <th className="w-[220px] p-2 text-right">
+                                  Quantity
+                                </th>
+                                <th className="w-[220px] p-2 text-right">
+                                  Unit Price
+                                </th>
+                                <th className="w-[220px] p-2 text-right">
+                                  Discount Amount
+                                </th>
+                                <th className="w-[220px] p-2 text-right">
+                                  VAT Amount
+                                </th>
+                                <th className="w-[220px] p-2 text-right">
+                                  Line Total
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
-                              {(details[si.salesInvoiceID] || []).map((d, i) => (
-                                <tr key={i}>
-                                  <td className="p-2 border-b border-gray-400">{d.itemDescription}</td>
-                                  <td className="p-2 border-b border-gray-400 text-right">{d.quantity}</td>
-                                  <td className="p-2 border-b border-gray-400 text-right">{d.unitPrice}</td>
-                                  <td className="p-2 border-b border-gray-400 text-right">{d.discountAmount}</td>
-                                  <td className="p-2 border-b border-gray-400 text-right">{d.vatAmount}</td>
-                                  <td className="p-2 border-b border-gray-400 text-right">{d.totalAmount}</td>
-                                </tr>
-                              ))}
+                              {(details[si.salesInvoiceID] || []).map(
+                                (d, i) => (
+                                  <tr key={i}>
+                                    <td className="p-2 border-b border-gray-400">
+                                      {d.itemDescription}
+                                    </td>
+                                    <td className="p-2 border-b border-gray-400 text-right">
+                                      {d.quantity}
+                                    </td>
+                                    <td className="p-2 border-b border-gray-400 text-right">
+                                      {d.unitPrice}
+                                    </td>
+                                    <td className="p-2 border-b border-gray-400 text-right">
+                                      {d.discountAmount}
+                                    </td>
+                                    <td className="p-2 border-b border-gray-400 text-right">
+                                      {d.vatAmount}
+                                    </td>
+                                    <td className="p-2 border-b border-gray-400 text-right">
+                                      {d.totalAmount}
+                                    </td>
+                                  </tr>
+                                ),
+                              )}
                             </tbody>
                           </table>
                         </td>
@@ -750,7 +776,8 @@ const SalesInvoiceView: React.FC = () => {
           </button>
 
           <div className="text-sm text-gray-600">
-            Page {page + 1} of {Math.ceil(total / pageSize)} | Total: {total} records
+            Page {page + 1} of {Math.ceil(total / pageSize)} | Total: {total}{" "}
+            records
           </div>
         </div>
       </div>
@@ -778,8 +805,11 @@ const SalesInvoiceView: React.FC = () => {
                   setApproveModalOpen(false);
                   setSelectedInvoiceId(null);
                 }}
-                className={`px-4 py-2 rounded text-white ${isAlreadyApproved ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-                  }`}
+                className={`px-4 py-2 rounded text-white ${
+                  isAlreadyApproved
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
                 disabled={isAlreadyApproved}
               >
                 Approve
@@ -790,9 +820,7 @@ const SalesInvoiceView: React.FC = () => {
       )}
       {isStatusModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-
           <div className="bg-white p-4 rounded shadow w-[320px]">
-
             <h3 className="text-sm font-semibold mb-3">
               Update Sales Invoice Status
             </h3>
@@ -811,13 +839,11 @@ const SalesInvoiceView: React.FC = () => {
                   <option value="Cancelled">Cancelled</option>
                   <option value="Closed">Closed</option>
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
               </div>
             </div>
 
             <div className="flex justify-end gap-2">
-
               <button
                 onClick={closeStatusModal}
                 className="px-3 py-1 bg-gray-400 text-white text-xs rounded"
@@ -831,9 +857,7 @@ const SalesInvoiceView: React.FC = () => {
               >
                 Update
               </button>
-
             </div>
-
           </div>
         </div>
       )}

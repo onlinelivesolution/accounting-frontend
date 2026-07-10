@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axiosClient";
 
 const LoginUser: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -30,10 +30,7 @@ const LoginUser: React.FC = () => {
 
       console.log("LOGIN PAYLOAD:", payload);
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/tenantauth/tenantLogin",
-        payload,
-      );
+      const response = await api.post("/tenantauth/tenantLogin", payload);
 
       console.log("LOGIN RESPONSE:", response.data);
 
