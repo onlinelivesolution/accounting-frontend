@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import axios from "axios";
+import api from "@/utils/axios";
 
 interface SalaryDetail {
     salaryDetailID: number;
@@ -89,8 +90,8 @@ const ApproveSalary: React.FC = () => {
         }
 
         try {
-            const response = await axios.get<Salary[]>(
-                "http://127.0.0.1:8000/api/salarydetails/getSalaryDetailByYearAndMonth",
+            const response = await api.get<Salary[]>(
+                "/api/salarydetails/getSalaryDetailByYearAndMonth",
                 { params: { year: fiscalYear, month, status: selectedStatus } }
             );
             setSalaryData(response.data);
@@ -149,7 +150,7 @@ const ApproveSalary: React.FC = () => {
         }
 
         try {
-            await axios.post("http://127.0.0.1:8000/api/salarydetails/approveSalaryDetails", selectedDetails, {
+            await api.post("/api/salarydetails/approveSalaryDetails", selectedDetails, {
                 headers: { "Content-Type": "application/json" }
             });
 
@@ -185,9 +186,9 @@ const ApproveSalary: React.FC = () => {
 
     // 🔹 Load Status Options
     useEffect(() => {
-        axios
+        api
             .get<StatusOption[]>(
-                "http://127.0.0.1:8000/api/salarydetails/loadDefaultItemStatus"
+                "/api/salarydetails/loadDefaultItemStatus"
             )
             .then((res) => setStatuses(res.data))
             .catch((err) => console.error("Failed to load statuses:", err));

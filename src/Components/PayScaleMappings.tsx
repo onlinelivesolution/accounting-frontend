@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/utils/axios";
 
 // --- Custom type guard for Axios errors ---
 function isAxiosError<T = unknown>(err: unknown): err is { response?: { data: T }; message: string; isAxiosError?: boolean } {
@@ -103,10 +103,10 @@ const PayscaleMappings: React.FC = () => {
         conveyance: emp.salaryBreakdown?.["Conveyance"] ?? 0,
       }));
 
-      const response = await axios.post<{ message?: string }>(
-        "http://127.0.0.1:8000/api/payscales/processInsertOrUpdatePayScale",
+      const response = await api.post<{ message?: string }>(
+        "/api/payscales/processInsertOrUpdatePayScale",
         payScaleRows
-      );
+      ); 
 
       alert(response.data.message ?? "Pay scale data submitted successfully!");
     } catch (err: unknown) {
@@ -123,8 +123,8 @@ const PayscaleMappings: React.FC = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get<Employee[]>(
-          "http://127.0.0.1:8000/api/payscales/getAllEmployeeForPayScaleMapping"
+        const response = await api.get<Employee[]>(
+          "/api/payscales/getAllEmployeeForPayScaleMapping"
         );
         setEmployees(response.data ?? []);
       } catch (err: unknown) {
@@ -147,8 +147,8 @@ const PayscaleMappings: React.FC = () => {
   useEffect(() => {
     const fetchPayrollItems = async () => {
       try {
-        const response = await axios.get<PayrollItem[]>(
-          "http://127.0.0.1:8000/api/payscales/loadDefaultPayrollItems"
+        const response = await api.get<PayrollItem[]>(
+          "/api/payscales/loadDefaultPayrollItems"
         );
         setPayrollItems(response.data ?? []);
       } catch (err: unknown) {

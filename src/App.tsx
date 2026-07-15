@@ -757,14 +757,14 @@ const App: React.FC = () => {
               </AdminProtectedRoute>
             }
           />
-          {/* <Route
+          <Route
             path="/admin/dashboard"
             element={
               <AdminProtectedRoute>
                 <AdminDashboard />
               </AdminProtectedRoute>
             }
-          /> */}
+          />
           <Route path="/admin/login" element={<AdminLogin />} />
 
           <Route path="/admin/verify-otp" element={<AdminVerifyOTP />} />

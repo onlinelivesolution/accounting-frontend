@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import axios from "axios";
+import api from "@/utils/axios";
 
 
 // --- Custom type guard for Axios errors ---
@@ -146,7 +146,7 @@ export default function GenerateSalar() {
   };
 
   const loadEmployees = async () => {
-    const res = await axios.get<Employee[]>("http://127.0.0.1:8000/api/payscales/getAllEmployeeForPayScaleMapping");
+    const res = await api.get<Employee[]>("/api/payscales/getAllEmployeeForPayScaleMapping");
     setEmployees(res.data);
   };
 
@@ -194,8 +194,8 @@ export default function GenerateSalar() {
           loanAdjust: loanAdjust,
         }));
 
-      const res = await axios.post<{ salaryDetails: SalaryDetail[] }>(
-        "http://127.0.0.1:8000/api/generatesalary/generateActiveEmployeeSalary",
+      const res = await api.post<{ salaryDetails: SalaryDetail[] }>(
+        "/api/generatesalary/generateActiveEmployeeSalary",
         rows // 👈 send raw array (no wrapper)
       );
 
@@ -213,8 +213,8 @@ export default function GenerateSalar() {
         message: "Salary submission",
       };
 
-      const response = await axios.post<{ message?: string }>(
-        "http://127.0.0.1:8000/api/generatesalary/insertSalaryInformation",
+      const response = await api.post<{ message?: string }>(
+        "/api/generatesalary/insertSalaryInformation",
         payload
       );
 
@@ -238,8 +238,8 @@ export default function GenerateSalar() {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await axios.get<Company[]>(
-          "http://127.0.0.1:8000/api/generatesalary/loadCompanyDropdown"
+        const response = await api.get<Company[]>(
+          "/api/generatesalary/loadCompanyDropdown"
         );
         setCompanies(response.data);
       } catch (error) {
@@ -253,8 +253,8 @@ export default function GenerateSalar() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get<ActivityCenter[]>(
-          "http://127.0.0.1:8000/api/generatesalary/loadDepartmentDropdown"
+        const response = await api.get<ActivityCenter[]>(
+          "/api/generatesalary/loadDepartmentDropdown"
         );
         setDepartments(response.data);
       } catch (error) {
@@ -269,8 +269,8 @@ export default function GenerateSalar() {
   useEffect(() => {
     const fetchSections = async () => {
       try {
-        const response = await axios.get<ResponsibilityCenter[]>(
-          "http://127.0.0.1:8000/api/generatesalary/loadSectionDropdown"
+        const response = await api.get<ResponsibilityCenter[]>(
+          "/api/generatesalary/loadSectionDropdown"
         );
         setSections(response.data);
       } catch (error) {
@@ -285,8 +285,8 @@ export default function GenerateSalar() {
   useEffect(() => {
     const fetchFiscalYear = async () => {
       try {
-        const response = await axios.get<FiscalYear[]>(
-          "http://127.0.0.1:8000/api/generatesalary/loadFiscalYearDropdown"
+        const response = await api.get<FiscalYear[]>(
+          "/api/generatesalary/loadFiscalYearDropdown"
         );
         setFiscalYears(response.data);
       } catch (error) {
@@ -301,8 +301,8 @@ export default function GenerateSalar() {
   useEffect(() => {
     const fetchMonthNames = async () => {
       try {
-        const response = await axios.get<MonthName[]>(
-          "http://127.0.0.1:8000/api/generatesalary/loadMonthNames"
+        const response = await api.get<MonthName[]>(
+          "/api/generatesalary/loadMonthNames"
         );
         setMonthNames(response.data ?? []);
       } catch (err: unknown) {
