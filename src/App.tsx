@@ -36,6 +36,7 @@ import PayscaleMappings from "./Components/PayScaleMappings";
 import UserInfos from "./Components/UserInfo";
 import PermissionAssign from "./Components/RolePermissionAssign";
 import AdminDashboard from "./Components/AdminDashboard";
+import PaymentSalary from "./Components/PaymentSalary";
 
 // ------- Types -------
 interface MenuItem {
@@ -379,6 +380,12 @@ const App: React.FC = () => {
     // Financial
     if (user?.isSuperAdmin || hasPermission("Financial", "View")) {
       items.push({
+        name: "Salary Payment",
+        path: "/financial/payment",
+        category: "Financial",
+      });
+
+      items.push({
         name: "Salary",
         path: "/financial/salary",
         category: "Financial",
@@ -393,12 +400,6 @@ const App: React.FC = () => {
       items.push({
         name: "Expense",
         path: "/financial/expense",
-        category: "Financial",
-      });
-
-      items.push({
-        name: "Payment",
-        path: "/financial/payment",
         category: "Financial",
       });
     }
@@ -954,7 +955,7 @@ const App: React.FC = () => {
             path="/financial/payment"
             element={
               <ProtectedRoute permissionName="Financial" actionName="View">
-                <h2>Payment Page</h2>
+                <PaymentSalary />
               </ProtectedRoute>
             }
           />
