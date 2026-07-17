@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/utils/axios";
+import { isAxiosError } from "axios";
 
 interface SalaryDetail {
   salaryDetailID: number;
@@ -52,6 +53,23 @@ interface Salary {
 interface StatusOption {
   id: number;
   name: string;
+}
+
+interface SalaryPaymentDTO {
+  companyCode: string;
+  fiscalYear: string;
+  year: number;
+  month: number;
+  paymentDate: string;
+  createdBy: string;
+  salaryDetails: SalaryPaymentDetailDTO[];
+}
+
+interface SalaryPaymentDetailDTO {
+  salaryID: number;
+  salaryDetailID: number;
+  employeeID: number;
+  netEarnings: number;
 }
 
 const PaymentSalary: React.FC = () => {
@@ -142,30 +160,6 @@ const PaymentSalary: React.FC = () => {
     );
   };
 
-  const handleApproveSalaryInformation = async () => {
-    if (selectedDetails.length === 0) {
-      alert("Please select at least one employee to approve.");
-      return;
-    }
-
-    try {
-      await api.post(
-        "/api/salarydetails/approveSalaryDetails",
-        selectedDetails,
-        {
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-
-      alert("Selected salaries approved!");
-      handleLoadSalaryDetails(); // refresh the table
-      setSelectedDetails([]); // clear selections
-    } catch (err) {
-      console.error("Approval failed:", err);
-      alert("Failed to approve salaries.");
-    }
-  };
-
   // 🔹 Export
   const exportToExcel = () => {
     if (salaryData.length === 0) return;
@@ -192,6 +186,54 @@ const PaymentSalary: React.FC = () => {
       .then((res) => setStatuses(res.data))
       .catch((err) => console.error("Failed to load statuses:", err));
   }, []);
+
+  const submitPaymentSalary = async () => {
+    try {
+      const selectedRows = salaryData.flatMap((salary) =>
+        salary.details
+          .filter((detail) => selectedDetails.includes(detail.salaryDetailID))
+          .map((detail) => ({
+            salaryID: salary.salaryID,
+            salaryDetailID: detail.salaryDetailID,
+            employeeID: detail.employeeID,
+            netEarnings: detail.netEarnings,
+          })),
+      );
+
+      if (selectedRows.length === 0) {
+        alert("Please select at least one salary.");
+        return;
+      }
+
+      const payload: SalaryPaymentDTO = {
+        companyCode: salaryData[0].companyCode,
+        fiscalYear: fiscalYear,
+        year: new Date().getFullYear(),
+        month: month,
+        paymentDate: new Date().toISOString(),
+        createdBy: "Admin",
+        salaryDetails: selectedRows,
+      };
+
+      const res = await api.post(
+        "/api/salarypayments/createSalaryPayment",
+        payload,
+      );
+
+      alert(res.data.message);
+
+      // Reload data after payment
+      handleLoadSalaryDetails();
+      setSelectedDetails([]);
+    } catch (err) {
+      if (isAxiosError(err)) {
+        alert(err.response?.data?.detail ?? err.message);
+      } else {
+        console.error(err);
+        alert("Salary payment failed.");
+      }
+    }
+  };
 
   return (
     <div className="p-6 space-y-4">
@@ -485,10 +527,10 @@ const PaymentSalary: React.FC = () => {
       {/* Actions */}
       <div className="flex gap-4 mt-4">
         <button
-          onClick={handleApproveSalaryInformation}
-          className="bg-green-500 text-white px-4 py-1 rounded"
+          onClick={submitPaymentSalary}
+          className="bg-purple-500 text-white px-4 py-1 rounded"
         >
-          Approve
+          Payment
         </button>
         <button
           onClick={exportToExcel}
@@ -501,9 +543,6 @@ const PaymentSalary: React.FC = () => {
           className="bg-blue-500 text-white px-4 py-1 rounded"
         >
           CSV
-        </button>
-        <button className="bg-purple-500 text-white px-4 py-1 rounded">
-          Payment
         </button>
       </div>
     </div>
