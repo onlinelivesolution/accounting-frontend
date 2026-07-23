@@ -166,13 +166,12 @@ const JournalEntry: React.FC = () => {
 
   const loadAccounts = async () => {
     try {
-        
       const res = await api.get("/api/common/loadDetailItems");
 
       setDebitAccounts(res.data);
       setCreditAccounts(res.data);
     } catch (error) {
-      console.error("Error loading accounts:", error); 
+      console.error("Error loading accounts:", error);
     }
   };
 
@@ -325,10 +324,7 @@ const JournalEntry: React.FC = () => {
     console.log(JSON.stringify(payload, null, 2));
 
     try {
-      await axios.post(
-        "http://127.0.0.1:8000/api/commonjournal/createGeneralJournalEntry",
-        payload,
-      );
+      await api.post("/api/commonjournal/createGeneralJournalEntry", payload);
       toast.success("Journal Entry saved successfully");
     } catch (error) {
       console.error("❌ API Error:", error);

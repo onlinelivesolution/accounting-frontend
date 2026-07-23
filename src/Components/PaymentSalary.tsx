@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/utils/axios";
-import { isAxiosError } from "axios";
+import { ChevronDown } from "lucide-react";
 
 interface SalaryDetail {
   salaryDetailID: number;
@@ -55,21 +55,16 @@ interface StatusOption {
   name: string;
 }
 
-interface SalaryPaymentDTO {
-  companyCode: string;
-  fiscalYear: string;
-  year: number;
-  month: number;
-  paymentDate: string;
-  createdBy: string;
-  salaryDetails: SalaryPaymentDetailDTO[];
+interface SalaryPaymentResponse {
+  salaryPaymentID: number;
+  paymentNo: string;
+  message: string;
 }
 
-interface SalaryPaymentDetailDTO {
-  salaryID: number;
-  salaryDetailID: number;
-  employeeID: number;
-  netEarnings: number;
+interface BankOrCashAccount {
+  detailItemCode: string;
+  detailItemName: string;
+  loadType: string;
 }
 
 const PaymentSalary: React.FC = () => {
@@ -82,6 +77,11 @@ const PaymentSalary: React.FC = () => {
   const [salaryData, setSalaryData] = useState<Salary[]>([]);
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [selectedDetails, setSelectedDetails] = useState<number[]>([]);
+  const [paymentNo, setPaymentNo] = useState<string>("");
+  const [bankAccounts, setBankAccounts] = useState<BankOrCashAccount[]>([]);
+  const [selectedAccountCode, setSelectedAccountCode] = useState("");
+  const [selectedAccountBalance, setSelectedAccountBalance] = useState("");
+  const [remarks, setRemarks] = useState("");
 
   const FISCAL_YEARS = ["2024", "2025", "2026"];
   const MONTHS = [
@@ -98,6 +98,39 @@ const PaymentSalary: React.FC = () => {
     { id: 11, name: "November" },
     { id: 12, name: "December" },
   ];
+
+  const loadBankOrCashAccounts = async () => {
+    try {
+      const res = await api.get<BankOrCashAccount[]>(
+        "/api/common/loadBankOrCashAccount",
+      );
+
+      setBankAccounts(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    loadBankOrCashAccounts();
+  }, []);
+
+  const handleAccountChange = async (accountCode: string) => {
+    setSelectedAccountCode(accountCode);
+
+    try {
+      const res = await api.get(`/api/banktransactions/getAccountBalance/${accountCode}`);
+
+      setSelectedAccountBalance(
+        Number(res.data.balance).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      );
+    } catch {
+      setSelectedAccountBalance("0.00");
+    }
+  };
 
   // 🔹 Load Salary Data
   const handleLoadSalaryDetails = async () => {
@@ -194,44 +227,51 @@ const PaymentSalary: React.FC = () => {
           .filter((detail) => selectedDetails.includes(detail.salaryDetailID))
           .map((detail) => ({
             salaryID: salary.salaryID,
-            salaryDetailID: detail.salaryDetailID,
             employeeID: detail.employeeID,
-            netEarnings: detail.netEarnings,
+            amount: detail.netEarnings,
+            paymentStatus: 1,
           })),
       );
 
       if (selectedRows.length === 0) {
-        alert("Please select at least one salary.");
+        alert("Please select at least one employee.");
         return;
       }
 
-      const payload: SalaryPaymentDTO = {
-        companyCode: salaryData[0].companyCode,
-        fiscalYear: fiscalYear,
-        year: new Date().getFullYear(),
-        month: month,
+      const totalAmount = selectedRows.reduce(
+        (sum, row) => sum + row.amount,
+        0,
+      );
+
+      const payload = {
+        paymentNo: paymentNo,
         paymentDate: new Date().toISOString(),
-        createdBy: "Admin",
-        salaryDetails: selectedRows,
+        salaryMonth: month.toString(),
+        salaryYear: salaryData[0].year,
+        // bankAccountID: selectedBankAccountID,
+        totalAmount,
+        remarks,
+        status: 1,
+        createdDate: new Date().toISOString(),
+        salaryPaymentDetails: selectedRows,
       };
 
-      const res = await api.post(
-        "/api/salarypayments/createSalaryPayment",
+      const res = await api.post<SalaryPaymentResponse>(
+        "/salarypayments/createSalaryPayment",
         payload,
       );
 
-      alert(res.data.message);
+      alert(`${res.data.message}\n\nPayment No : ${res.data.paymentNo}`);
 
-      // Reload data after payment
-      handleLoadSalaryDetails();
+      // Clear selections
       setSelectedDetails([]);
-    } catch (err) {
-      if (isAxiosError(err)) {
-        alert(err.response?.data?.detail ?? err.message);
-      } else {
-        console.error(err);
-        alert("Salary payment failed.");
-      }
+
+      // Reload data
+      await handleLoadSalaryDetails();
+    } catch (err: any) {
+      console.error(err);
+
+      alert(err.response?.data?.detail ?? "Salary payment failed.");
     }
   };
 
@@ -239,37 +279,57 @@ const PaymentSalary: React.FC = () => {
     <div className="p-6 space-y-4">
       {/* Filters */}
       <div className="flex gap-4">
-        <select
-          value={fiscalYear}
-          onChange={(e) => setFiscalYear(e.target.value)}
-          className="border rounded px-2 py-1"
-        >
-          {FISCAL_YEARS.map((fy) => (
-            <option key={fy}>{fy}</option>
-          ))}
-        </select>
-        <select
-          value={month}
-          onChange={(e) => setMonth(Number(e.target.value))}
-          className="border rounded px-2 py-1"
-        >
-          {MONTHS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(Number(e.target.value))}
-          className="border rounded px-2 py-1"
-        >
-          {statuses.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <label className="w-40 text-[10px]">Select Year</label>
+          <div className="relative w-ful">
+            <select
+              value={fiscalYear}
+              onChange={(e) => setFiscalYear(e.target.value)}
+              className="w-full text-[10px] text-gray-800 h-[28px] px-2 pr-8 rounded border border-gray-400 appearance-none"
+            >
+              {FISCAL_YEARS.map((fy) => (
+                <option key={fy}>{fy}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="w-40 text-[10px]">Select Month</label>
+          <div className="relative w-full">
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="w-full text-[10px] text-gray-800 h-[28px] px-2 pr-8 rounded border border-gray-400 appearance-none"
+            >
+              {MONTHS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="w-40 text-[10px]">Select Month</label>
+          <div className="relative w-full">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(Number(e.target.value))}
+              className="w-full text-[10px] text-gray-800 h-[28px] px-2 pr-8 rounded border border-gray-400 appearance-none"
+            >
+              {statuses.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          </div>
+        </div>
         <button
           onClick={handleLoadSalaryDetails}
           className="bg-blue-500 text-white px-4 py-1 rounded"
@@ -523,6 +583,59 @@ const PaymentSalary: React.FC = () => {
           </tbody>
         </table>
       </div>
+      <div className="p-3">
+        <div className="grid grid-cols-12 gap-3 items-center">
+          {/* Account */}
+          <label className="col-span-1 text-[10px] font-medium">
+            Select Account
+          </label>
+
+          <div className="col-span-2 relative">
+            <select
+              className="w-full h-7 text-[11px] px-2 pr-8 border border-gray-400 rounded appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={selectedAccountCode}
+              onChange={(e) => handleAccountChange(e.target.value)}
+            >
+              <option value="">Select Bank / Cash</option>
+
+              {bankAccounts.map((item) => (
+                <option key={item.detailItemCode} value={item.detailItemCode}>
+                  {item.detailItemName} -{" "}
+                  {item.detailItemCode} [{ item.loadType }]
+                </option>
+              ))}
+            </select>
+
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          </div>
+
+          {/* Balance */}
+          <label className="col-span-1 text-[10px] font-medium text-right">
+            Account Balance
+          </label>
+
+          <input
+            type="text"
+            value={selectedAccountBalance}
+            readOnly
+            className="col-span-2 h-7 px-2 border border-gray-400 rounded text-[14px] text-green-800 font-bold text-right"
+          />
+
+          {/* Remarks */}
+          <label className="col-span-1 text-[10px] font-medium text-right">
+            Write Notes
+          </label>
+
+          <input
+            type="text"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder="Enter remarks..."
+            className="col-span-5 h-7 px-2 border border-gray-400 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-5 gap-2 mb-3"></div>
 
       {/* Actions */}
       <div className="flex gap-4 mt-4">
