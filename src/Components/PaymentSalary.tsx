@@ -81,6 +81,7 @@ const PaymentSalary: React.FC = () => {
   const [bankAccounts, setBankAccounts] = useState<BankOrCashAccount[]>([]);
   const [selectedAccountCode, setSelectedAccountCode] = useState("");
   const [selectedAccountBalance, setSelectedAccountBalance] = useState("");
+  const [nextSalaryPaymentNo, setNextSalaryPaymentNo] = useState<string>("");
   const [remarks, setRemarks] = useState("");
 
   const FISCAL_YEARS = ["2024", "2025", "2026"];
@@ -119,7 +120,9 @@ const PaymentSalary: React.FC = () => {
     setSelectedAccountCode(accountCode);
 
     try {
-      const res = await api.get(`/api/banktransactions/getAccountBalance/${accountCode}`);
+      const res = await api.get(
+        `/api/banktransactions/getAccountBalance/${accountCode}`,
+      );
 
       setSelectedAccountBalance(
         Number(res.data.balance).toLocaleString(undefined, {
@@ -220,6 +223,20 @@ const PaymentSalary: React.FC = () => {
       .catch((err) => console.error("Failed to load statuses:", err));
   }, []);
 
+  useEffect(() => {
+    const fetchSalaryPaymentNo = async () => {
+      try {
+        const res = await api.get("/api/salarypayments/getNextSalaryPaymentNo");
+
+        setNextSalaryPaymentNo(res.data.paymentNo);
+      } catch (err) {
+        console.error("Failed to load salary payment no:", err);
+      }
+    };
+
+    fetchSalaryPaymentNo();
+  }, []);
+
   const submitPaymentSalary = async () => {
     try {
       const selectedRows = salaryData.flatMap((salary) =>
@@ -244,20 +261,21 @@ const PaymentSalary: React.FC = () => {
       );
 
       const payload = {
-        paymentNo: paymentNo,
+        paymentNo: nextSalaryPaymentNo,
         paymentDate: new Date().toISOString(),
         salaryMonth: month.toString(),
         salaryYear: salaryData[0].year,
-        // bankAccountID: selectedBankAccountID,
+        bankAccountCode: selectedAccountCode,
         totalAmount,
         remarks,
         status: 1,
         createdDate: new Date().toISOString(),
+        companyCode: "01",
         salaryPaymentDetails: selectedRows,
       };
 
       const res = await api.post<SalaryPaymentResponse>(
-        "/salarypayments/createSalaryPayment",
+        "/api/salarypayments/createSalaryPayment",
         payload,
       );
 
@@ -585,6 +603,17 @@ const PaymentSalary: React.FC = () => {
       </div>
       <div className="p-3">
         <div className="grid grid-cols-12 gap-3 items-center">
+          {/* Next Salary Payment No */}
+          <label className="col-span-1 text-[10px] font-medium text-left">
+            Document No
+          </label>
+
+          <input
+            type="text"
+            value={nextSalaryPaymentNo}
+            readOnly
+            className="col-span-1 h-7 px-2 border border-gray-500 rounded text-[12px] text-center"
+          />
           {/* Account */}
           <label className="col-span-1 text-[10px] font-medium">
             Select Account
@@ -600,8 +629,8 @@ const PaymentSalary: React.FC = () => {
 
               {bankAccounts.map((item) => (
                 <option key={item.detailItemCode} value={item.detailItemCode}>
-                  {item.detailItemName} -{" "}
-                  {item.detailItemCode} [{ item.loadType }]
+                  {item.detailItemName} - {item.detailItemCode} [{item.loadType}
+                  ]
                 </option>
               ))}
             </select>
@@ -618,7 +647,7 @@ const PaymentSalary: React.FC = () => {
             type="text"
             value={selectedAccountBalance}
             readOnly
-            className="col-span-2 h-7 px-2 border border-gray-400 rounded text-[14px] text-green-800 font-bold text-right"
+            className="col-span-1 h-7 px-2 border border-gray-400 rounded text-[14px] text-green-800 font-bold text-right"
           />
 
           {/* Remarks */}
@@ -631,7 +660,7 @@ const PaymentSalary: React.FC = () => {
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
             placeholder="Enter remarks..."
-            className="col-span-5 h-7 px-2 border border-gray-400 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="col-span-4 h-7 px-2 border border-gray-400 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>
