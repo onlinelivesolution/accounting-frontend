@@ -4,36 +4,53 @@ import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "@/utils/axios";
 
+interface ProfitLossItem {
+  ControlItemName: string;
+  ReportingItemName: string;
+  DetailItemCode: string;
+  DetailItemName: string;
+  NormalBalance: string;
+  TotalDebit: number;
+  TotalCredit: number;
+  Amount: number;
+}
+
+interface ProfitLossResponse {
+  income: ProfitLossItem[];
+  cogs: ProfitLossItem[];
+  expense: ProfitLossItem[];
+
+  totalIncome: number;
+  totalCOGS: number;
+  totalExpense: number;
+
+  grossProfit: number;
+  netProfit: number;
+}
+
 interface BalanceItem {
   name: string;
   amount: number;
 }
 
-interface BalanceSheetData {
-  assets: BalanceItem[];
-  liabilities: BalanceItem[];
-  equity: BalanceItem[];
-}
-
-interface ApiItem {
-  DetailItemName: string;
-  ClosingBalance: number;
-}
-
-interface BalanceSheetResponse {
-  assets: ApiItem[];
-  liabilities: ApiItem[];
-  equity: ApiItem[];
-}
-
-const BalanceSheet: React.FC = () => {
-  const [data, setData] = useState<BalanceSheetData | null>(null);
+const ProfitAndLoss: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fromDate, setFromDate] = useState<Date | null>(new Date());
   const [toDate, setToDate] = useState<Date | null>(new Date());
 
-  const loadBalanceSheet = async () => {
+  const [data, setData] = useState<{
+    income: { name: string; amount: number }[];
+    cogs: { name: string; amount: number }[];
+    expense: { name: string; amount: number }[];
+    totalIncome: number;
+    totalCOGS: number;
+    totalExpense: number;
+    grossProfit: number;
+    netProfit: number;
+  } | null>(null);
+
+  const loadProfitLoss = async () => {
     if (!fromDate || !toDate) {
       alert("Please select From Date and To Date.");
       return;
@@ -44,8 +61,9 @@ const BalanceSheet: React.FC = () => {
     setData(null);
 
     try {
-      const response = await api.get<BalanceSheetResponse>(
-        "/api/accountreports/balance-sheet",
+
+      const response = await api.get<ProfitLossResponse>(
+        "/api/accountreports/profit-loss",
         {
           params: {
             from_date: fromDate.toISOString().split("T")[0],
@@ -57,24 +75,32 @@ const BalanceSheet: React.FC = () => {
       const result = response.data;
 
       setData({
-        assets: result.assets.map((a) => ({
-          name: a.DetailItemName,
-          amount: Number(a.ClosingBalance),
+        income: result.income.map((item) => ({
+          name: item.DetailItemName,
+          amount: Number(item.Amount),
         })),
-        liabilities: result.liabilities.map((l) => ({
-          name: l.DetailItemName,
-          amount: Number(l.ClosingBalance),
+
+        cogs: result.cogs.map((item) => ({
+          name: item.DetailItemName,
+          amount: Number(item.Amount),
         })),
-        equity: result.equity.map((e) => ({
-          name: e.DetailItemName,
-          amount: Number(e.ClosingBalance),
+
+        expense: result.expense.map((item) => ({
+          name: item.DetailItemName,
+          amount: Number(item.Amount),
         })),
+
+        totalIncome: Number(result.totalIncome),
+        totalCOGS: Number(result.totalCOGS),
+        totalExpense: Number(result.totalExpense),
+        grossProfit: Number(result.grossProfit),
+        netProfit: Number(result.netProfit),
       });
     } catch (err: any) {
       console.error(err);
 
       setError(
-        err.response?.data?.detail ?? "Unable to load balance sheet data",
+        err.response?.data?.detail ?? "Unable to load Profit & Loss report.",
       );
     } finally {
       setLoading(false);
@@ -109,7 +135,7 @@ const BalanceSheet: React.FC = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Balance Sheet</h1>
+      <h1 className="text-2xl font-bold mb-4">Profit & Loss</h1>
 
       <div className="flex gap-3 mb-4">
         <div className="flex items-center gap-2">
@@ -151,7 +177,7 @@ const BalanceSheet: React.FC = () => {
         </div>
 
         <button
-          onClick={loadBalanceSheet}
+          onClick={loadProfitLoss}
           className="bg-blue-600 text-white px-4 py-1 rounded"
         >
           Load
@@ -162,14 +188,61 @@ const BalanceSheet: React.FC = () => {
       {error && <p className="text-red-600">{error}</p>}
 
       {data && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {renderSection("Assets", data.assets)}
-          {renderSection("Liabilities", data.liabilities)}
-          {renderSection("Equity", data.equity)}
-        </div>
+        <>
+          <h3>Income</h3>
+          {data.income.map((item) => (
+            <div key={item.name} className="flex justify-between">
+              <span>{item.name}</span>
+              <span>{item.amount.toLocaleString()}</span>
+            </div>
+          ))}
+
+          <h3>Cost of Goods Sold</h3>
+          {data.cogs.map((item) => (
+            <div key={item.name} className="flex justify-between">
+              <span>{item.name}</span>
+              <span>{item.amount.toLocaleString()}</span>
+            </div>
+          ))}
+
+          <h3>Expenses</h3>
+          {data.expense.map((item) => (
+            <div key={item.name} className="flex justify-between">
+              <span>{item.name}</span>
+              <span>{item.amount.toLocaleString()}</span>
+            </div>
+          ))}
+
+          <hr />
+
+          <div className="flex justify-between font-bold">
+            <span>Total Income</span>
+            <span>{data.totalIncome.toLocaleString()}</span>
+          </div>
+
+          <div className="flex justify-between font-bold">
+            <span>Total COGS</span>
+            <span>{data.totalCOGS.toLocaleString()}</span>
+          </div>
+
+          <div className="flex justify-between font-bold">
+            <span>Gross Profit</span>
+            <span>{data.grossProfit.toLocaleString()}</span>
+          </div>
+
+          <div className="flex justify-between font-bold">
+            <span>Total Expense</span>
+            <span>{data.totalExpense.toLocaleString()}</span>
+          </div>
+
+          <div className="flex justify-between text-lg font-bold text-blue-700">
+            <span>Net Profit / (Loss)</span>
+            <span>{data.netProfit.toLocaleString()}</span>
+          </div>
+        </>
       )}
     </div>
   );
 };
 
-export default BalanceSheet;
+export default ProfitAndLoss;

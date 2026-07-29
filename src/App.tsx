@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import LoginUser from "./Components/LoginUser";
 import JournalEntry from "./Components/JournalEntry";
 import BalanceSheet from "./Components/BalanceSheet";
+import ProfitAndLoss from "./Components/ProfitAndLoss";
+import TrialBalance from "./Components/TrialBalance";
 import ViewQuotation from "./Components/ViewQuotations";
 import Quotations from "./Components/Quotations";
 import ViewSalesOrder from "./Components/ViewSalesOrders";
@@ -328,6 +330,18 @@ const App: React.FC = () => {
       items.push({
         name: "Balance Sheet",
         path: "/BalanceSheet",
+        category: "Accounts",
+      });
+
+      items.push({
+        name: "Profit & Loss",
+        path: "/ProfitAndLoss",
+        category: "Accounts",
+      });
+
+      items.push({
+        name: "Trial Balance",
+        path: "/TrialBalance",
         category: "Accounts",
       });
     }
@@ -826,6 +840,30 @@ const App: React.FC = () => {
                 actionName="Add Account"
               >
                 <BalanceSheet />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/ProfitAndLoss"
+            element={
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
+                <ProfitAndLoss />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/TrialBalance"
+            element={
+              <ProtectedRoute
+                permissionName="Accounts"
+                actionName="Add Account"
+              >
+                <TrialBalance />
               </ProtectedRoute>
             }
           />

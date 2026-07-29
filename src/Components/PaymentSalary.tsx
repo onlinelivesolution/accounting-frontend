@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/utils/axios";
-import { ChevronDown } from "lucide-react";
+import { CarTaxiFront, ChevronDown } from "lucide-react";
+import { putForm } from "node_modules/axios/index.cjs";
 
 interface SalaryDetail {
   salaryDetailID: number;
@@ -246,6 +247,11 @@ const PaymentSalary: React.FC = () => {
             salaryID: salary.salaryID,
             employeeID: detail.employeeID,
             amount: detail.netEarnings,
+            taxAmount: detail.taxAmount,
+            pfAmount: detail.pFAmount,
+            loanAdjust: detail.loanAdjust,
+            adjustAdvanceSalary: detail.adjustAdvanceSalary,
+            adjustUnPaidLeave: detail.adjustUnPaidLeave,
             paymentStatus: 1,
           })),
       );
@@ -260,6 +266,10 @@ const PaymentSalary: React.FC = () => {
         0,
       );
 
+      console.log("Selected Account Code:", selectedAccountCode);
+      console.log("Next Payment No:", nextSalaryPaymentNo);
+      console.log("Remarks:", remarks);
+
       const payload = {
         paymentNo: nextSalaryPaymentNo,
         paymentDate: new Date().toISOString(),
@@ -273,6 +283,9 @@ const PaymentSalary: React.FC = () => {
         companyCode: "01",
         salaryPaymentDetails: selectedRows,
       };
+
+      console.log("Salary Payment Payload");
+      console.log(JSON.stringify(payload, null, 2));
 
       const res = await api.post<SalaryPaymentResponse>(
         "/api/salarypayments/createSalaryPayment",

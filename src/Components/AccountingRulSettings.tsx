@@ -74,12 +74,12 @@ const AccountingRuleSettings = () => {
     const submitAccountingRule = async () => {
 
         // ✅ Validation: only ONE dynamic account allowed
-        const dynamicCount = rows.filter(r => r.isDynamicAccount).length;
+        // const dynamicCount = rows.filter(r => r.isDynamicAccount).length;
 
-        if (dynamicCount > 1) {
-            alert("Only one dynamic account is allowed");
-            return;
-        }
+        // if (dynamicCount > 1) {
+        //     alert("Only one dynamic account is allowed");
+        //     return;
+        // }
 
         // ✅ Validation: required fields
         for (const row of rows) {
@@ -220,6 +220,10 @@ const AccountingRuleSettings = () => {
                                         <option value="totalApplied">Total Applied</option>
                                         <option value="totalDiscount">Total Discount</option>
                                         <option value="totalUnallocated">Total Unallocated</option>
+                                        <option value="taxAmount">Tax Amount</option>
+                                        <option value="pfAmount">PF Amount</option>
+                                        <option value="loanAdjust">Loan Adjustment</option>
+                                        <option value="adjustAdvanceSalary">Adjust Advance Salary</option>
                                     </select>
                                     <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                                 </div>
