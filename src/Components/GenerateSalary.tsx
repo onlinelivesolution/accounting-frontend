@@ -60,7 +60,7 @@ interface SalaryDetail {
   overtime: number;
   otherAllowance: number;
   grossEarnings: number;
-  adjustUnPaidLeave: number;
+  adjustUnpaidLeave: number;
   taxAmount: number;
   pFAmount: number;
   employerContribution: number;
@@ -163,7 +163,7 @@ export default function GenerateSalar() {
       row.taxAmount +
       row.loanAdjust +
       row.adjustAdvanceSalary +
-      row.adjustUnPaidLeave +
+      row.adjustUnpaidLeave +
       row.houseRentDeduction +
       row.excessMobileBill +
       row.otherDeduction;
@@ -584,7 +584,7 @@ export default function GenerateSalar() {
                     <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.loanAdjust}</td>
                     <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.adjustAdvanceSalary}</td>
                     <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.taxAmount}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.adjustUnPaidLeave}</td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.adjustUnpaidLeave}</td>
                     <td className="border w-[120px] text-right items-right border-b border-blue-200">
                       <input
                         className="border w-[120px] text-right items-right border-b border-blue-200"

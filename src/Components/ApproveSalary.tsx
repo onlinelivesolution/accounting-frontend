@@ -18,7 +18,7 @@ interface SalaryDetail {
     overtime: number;
     otherAllowance: number;
     grossEarnings: number;
-    adjustUnPaidLeave: number;
+    adjustUnpaidLeave: number;
     taxAmount: number;
     pFAmount: number;
     employerContribution: number;
@@ -355,7 +355,7 @@ const ApproveSalary: React.FC = () => {
                                                         <td className="px-2 py-2 text-right">{detail.loanAdjust}</td>
                                                         <td className="px-2 py-2 text-right">{detail.adjustAdvanceSalary}</td>
                                                         <td className="px-2 py-2 text-right">{detail.taxAmount}</td>
-                                                        <td className="px-2 py-2 text-right">{detail.adjustUnPaidLeave}</td>
+                                                        <td className="px-2 py-2 text-right">{detail.adjustUnpaidLeave}</td>
                                                         <td className="px-2 py-2 text-right">{detail.houseRentDeduction}</td>
                                                         <td className="px-2 py-2 text-right">{detail.excessMobileBill}</td>
                                                         <td className="px-2 py-2 text-right">{detail.otherDeduction}</td>

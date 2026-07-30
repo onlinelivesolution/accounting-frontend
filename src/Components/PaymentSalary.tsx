@@ -19,7 +19,7 @@ interface SalaryDetail {
   overtime: number;
   otherAllowance: number;
   grossEarnings: number;
-  adjustUnPaidLeave: number;
+  adjustUnpaidLeave: number;
   taxAmount: number;
   pFAmount: number;
   employerContribution: number;
@@ -78,7 +78,6 @@ const PaymentSalary: React.FC = () => {
   const [salaryData, setSalaryData] = useState<Salary[]>([]);
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [selectedDetails, setSelectedDetails] = useState<number[]>([]);
-  const [paymentNo, setPaymentNo] = useState<string>("");
   const [bankAccounts, setBankAccounts] = useState<BankOrCashAccount[]>([]);
   const [selectedAccountCode, setSelectedAccountCode] = useState("");
   const [selectedAccountBalance, setSelectedAccountBalance] = useState("");
@@ -251,7 +250,7 @@ const PaymentSalary: React.FC = () => {
             pfAmount: detail.pFAmount,
             loanAdjust: detail.loanAdjust,
             adjustAdvanceSalary: detail.adjustAdvanceSalary,
-            adjustUnPaidLeave: detail.adjustUnPaidLeave,
+            adjustUnpaidLeave: detail.adjustUnpaidLeave,
             paymentStatus: 1,
           })),
       );
@@ -579,7 +578,7 @@ const PaymentSalary: React.FC = () => {
                               {detail.taxAmount}
                             </td>
                             <td className="px-2 py-2 text-right">
-                              {detail.adjustUnPaidLeave}
+                              {detail.adjustUnpaidLeave}
                             </td>
                             <td className="px-2 py-2 text-right">
                               {detail.houseRentDeduction}
