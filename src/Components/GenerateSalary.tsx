@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import api from "@/utils/axios";
-
+import { putForm } from "node_modules/axios/index.cjs";
 
 // --- Custom type guard for Axios errors ---
-function isAxiosError<T = unknown>(err: unknown): err is { response?: { data: T }; message: string; isAxiosError?: boolean } {
+function isAxiosError<T = unknown>(
+  err: unknown,
+): err is { response?: { data: T }; message: string; isAxiosError?: boolean } {
   return (err as { isAxiosError?: boolean }).isAxiosError === true;
 }
 
@@ -62,7 +64,7 @@ interface SalaryDetail {
   grossEarnings: number;
   adjustUnpaidLeave: number;
   taxAmount: number;
-  pFAmount: number;
+  pfAmount: number;
   employerContribution: number;
   supplementaryPF: number;
   loanAdjust: number;
@@ -93,7 +95,6 @@ interface Employee {
   status: number;
 }
 
-
 export default function GenerateSalar() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [salaryDetails, setSalaryDetails] = useState<SalaryDetail[]>([]);
@@ -103,8 +104,10 @@ export default function GenerateSalar() {
   const [departments, setDepartments] = useState<ActivityCenter[]>([]);
   const [sections, setSections] = useState<ResponsibilityCenter[]>([]);
   const [fiscalyears, setFiscalYears] = useState<FiscalYear[]>([]);
-  const [monthNames, setMonthNames] = useState<MonthName[]>([]);;
+  const [monthNames, setMonthNames] = useState<MonthName[]>([]);
   const [unpaidLeave, setUnpaidLeave] = useState(false);
+  const [pfAmount, setPFAmount] = useState(false);
+  const [employerContribution, setEmployerContribution] = useState(false);
   const [advanceSalary, setAdvanceSalary] = useState(false);
   const [loanAdjust, setLoanAdjust] = useState(false);
   // const [salaryNumber, setSalaryNumber] = useState<string>("");
@@ -130,8 +133,8 @@ export default function GenerateSalar() {
     } else {
       setSelectedEmployees(
         employees
-          .map((item) => item.employeeID || '')
-          .filter((id) => id !== '')
+          .map((item) => item.employeeID || "")
+          .filter((id) => id !== ""),
       );
     }
     setSelectAll(!selectAll);
@@ -141,16 +144,24 @@ export default function GenerateSalar() {
     setSelectedEmployees((prev) =>
       prev.includes(employeeID)
         ? prev.filter((id) => id !== employeeID)
-        : [...prev, employeeID]
+        : [...prev, employeeID],
     );
   };
 
   const loadEmployees = async () => {
-    const res = await api.get<Employee[]>("/api/payscales/getAllEmployeeForPayScaleMapping");
+    const res = await api.get<Employee[]>(
+      "/api/payscales/getAllEmployeeForPayScaleMapping",
+    );
     setEmployees(res.data);
   };
 
   const recalcSalary = (row: SalaryDetail): SalaryDetail => {
+    // PF = 10% of Basic
+    const pfAmount = row.basicSalary * 0.1;
+
+    // Employer Contribution = 50% of PF
+    const employerContribution = pfAmount * 0.5;
+
     const gross =
       row.basicSalary +
       row.houseRentAllowance +
@@ -161,6 +172,7 @@ export default function GenerateSalar() {
 
     const totalDeduction =
       row.taxAmount +
+      pfAmount +
       row.loanAdjust +
       row.adjustAdvanceSalary +
       row.adjustUnpaidLeave +
@@ -172,6 +184,8 @@ export default function GenerateSalar() {
 
     return {
       ...row,
+      pfAmount: parseFloat(pfAmount.toFixed(2)),
+      employerContribution: parseFloat(employerContribution.toFixed(2)),
       grossEarnings: parseFloat(gross.toFixed(2)),
       totalDeduction: parseFloat(totalDeduction.toFixed(2)),
       netEarnings: parseFloat(net.toFixed(2)),
@@ -196,14 +210,43 @@ export default function GenerateSalar() {
 
       const res = await api.post<{ salaryDetails: SalaryDetail[] }>(
         "/api/generatesalary/generateActiveEmployeeSalary",
-        rows // 👈 send raw array (no wrapper)
+        rows,
       );
 
-      setSalaryDetails(res.data.salaryDetails);
+      // Recalculate client side (for consistency if user edits values)
+      const updated = res.data.salaryDetails.map(recalcSalary);
+
+      setSalaryDetails(updated);
     } catch (error) {
       console.error("Error processing salary:", error);
     }
   };
+
+  // const generateIndividualEmployeeSalary = async () => {
+  //   try {
+  //     const rows = employees
+  //       .filter((e) => selectedEmployees.includes(e.employeeID))
+  //       .map((e) => ({
+  //         employeeID: e.employeeID,
+  //         employeeCode: e.employeeCode,
+  //         employeeName: e.employeeName,
+  //         payscaleID: e.payscaleID,
+  //         payscaleName: e.payscaleName,
+  //         adjustUnpaidLeave: unpaidLeave,
+  //         adjustAdvanceSalary: advanceSalary,
+  //         loanAdjust: loanAdjust,
+  //       }));
+
+  //     const res = await api.post<{ salaryDetails: SalaryDetail[] }>(
+  //       "/api/generatesalary/generateActiveEmployeeSalary",
+  //       rows, // 👈 send raw array (no wrapper)
+  //     );
+
+  //     setSalaryDetails(res.data.salaryDetails);
+  //   } catch (error) {
+  //     console.error("Error processing salary:", error);
+  //   }
+  // };
 
   const submitSalaryAndSalaryDetailInformation = async () => {
     try {
@@ -215,7 +258,7 @@ export default function GenerateSalar() {
 
       const response = await api.post<{ message?: string }>(
         "/api/generatesalary/insertSalaryInformation",
-        payload
+        payload,
       );
 
       alert(response.data.message ?? "Salary saved successfully!");
@@ -239,7 +282,7 @@ export default function GenerateSalar() {
     const fetchCompanies = async () => {
       try {
         const response = await api.get<Company[]>(
-          "/api/generatesalary/loadCompanyDropdown"
+          "/api/generatesalary/loadCompanyDropdown",
         );
         setCompanies(response.data);
       } catch (error) {
@@ -254,7 +297,7 @@ export default function GenerateSalar() {
     const fetchDepartments = async () => {
       try {
         const response = await api.get<ActivityCenter[]>(
-          "/api/generatesalary/loadDepartmentDropdown"
+          "/api/generatesalary/loadDepartmentDropdown",
         );
         setDepartments(response.data);
       } catch (error) {
@@ -265,12 +308,11 @@ export default function GenerateSalar() {
     fetchDepartments();
   }, []);
 
-
   useEffect(() => {
     const fetchSections = async () => {
       try {
         const response = await api.get<ResponsibilityCenter[]>(
-          "/api/generatesalary/loadSectionDropdown"
+          "/api/generatesalary/loadSectionDropdown",
         );
         setSections(response.data);
       } catch (error) {
@@ -281,12 +323,11 @@ export default function GenerateSalar() {
     fetchSections();
   }, []);
 
-
   useEffect(() => {
     const fetchFiscalYear = async () => {
       try {
         const response = await api.get<FiscalYear[]>(
-          "/api/generatesalary/loadFiscalYearDropdown"
+          "/api/generatesalary/loadFiscalYearDropdown",
         );
         setFiscalYears(response.data);
       } catch (error) {
@@ -297,17 +338,19 @@ export default function GenerateSalar() {
     fetchFiscalYear();
   }, []);
 
-
   useEffect(() => {
     const fetchMonthNames = async () => {
       try {
         const response = await api.get<MonthName[]>(
-          "/api/generatesalary/loadMonthNames"
+          "/api/generatesalary/loadMonthNames",
         );
         setMonthNames(response.data ?? []);
       } catch (err: unknown) {
         if (isAxiosError(err)) {
-          console.error("Failed to fetch month:", err.response?.data ?? err.message);
+          console.error(
+            "Failed to fetch month:",
+            err.response?.data ?? err.message,
+          );
         } else {
           console.error("Unexpected error:", err);
         }
@@ -315,7 +358,6 @@ export default function GenerateSalar() {
     };
     fetchMonthNames();
   }, []);
-
 
   return (
     <div className="grid grid-cols-6 gap-4 pt-1">
@@ -359,7 +401,10 @@ export default function GenerateSalar() {
             >
               <option value="">Department</option>
               {departments.map((department) => (
-                <option key={department.activityCenterCode} value={department.activityCenterCode}>
+                <option
+                  key={department.activityCenterCode}
+                  value={department.activityCenterCode}
+                >
                   {department.activityCenterName}
                 </option>
               ))}
@@ -379,7 +424,10 @@ export default function GenerateSalar() {
             >
               <option value="">Section</option>
               {sections.map((section) => (
-                <option key={section.respCenterCode} value={section.respCenterCode}>
+                <option
+                  key={section.respCenterCode}
+                  value={section.respCenterCode}
+                >
                   {section.respCenterName}
                 </option>
               ))}
@@ -450,11 +498,21 @@ export default function GenerateSalar() {
                     onChange={handleSelectAllChange}
                   />
                 </th>
-                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">Select All</th>
-                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">Employee Code</th>
-                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">Employee Name</th>
-                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">Payscale ID</th>
-                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">Payscale Name</th>
+                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">
+                  Select All
+                </th>
+                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">
+                  Employee Code
+                </th>
+                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">
+                  Employee Name
+                </th>
+                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">
+                  Payscale ID
+                </th>
+                <th className="w-[450px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">
+                  Payscale Name
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -469,10 +527,18 @@ export default function GenerateSalar() {
                     />
                   </td>
                   <td className="w-[50px] h-[10px] py-2 px-2 text-sm text-left border-b border-blue-300"></td>
-                  <td className="w-[50px] h-[10px] py-1 px-2 text-sm text-left border-b border-blue-300">{employee.employeeCode}</td>
-                  <td className="w-[50px] h-[10px] py-1 px-2 text-sm text-left border-b border-blue-300">{employee.employeeName}</td>
-                  <td className="w-[50px] h-[10px] py-1 px-2 text-sm text-left border-b border-blue-300">{employee.payscaleID}</td>
-                  <td className="w-[50px] h-[10px] py-1 px-2 text-sm text-left border-b border-blue-300">{employee.payscaleName}</td>
+                  <td className="w-[50px] h-[10px] py-1 px-2 text-sm text-left border-b border-blue-300">
+                    {employee.employeeCode}
+                  </td>
+                  <td className="w-[50px] h-[10px] py-1 px-2 text-sm text-left border-b border-blue-300">
+                    {employee.employeeName}
+                  </td>
+                  <td className="w-[50px] h-[10px] py-1 px-2 text-sm text-left border-b border-blue-300">
+                    {employee.payscaleID}
+                  </td>
+                  <td className="w-[50px] h-[10px] py-1 px-2 text-sm text-left border-b border-blue-300">
+                    {employee.payscaleName}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -516,35 +582,97 @@ export default function GenerateSalar() {
               />
               <span>Adjust Loan</span>
             </label>
-
+            <label className="flex items-center space-x-1 pb-[10px] text-gray-900 text-lg">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-blue-500"
+                checked={pfAmount}
+                onChange={() => setPFAmount(!pfAmount)}
+              />
+              <span>Calculate PF Amount</span>
+            </label>
+            {/* <label className="flex items-center space-x-1 pb-[10px] text-gray-900 text-lg">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-blue-500"
+                checked={employerContribution}
+                onChange={() => setEmployerContribution(!employerContribution)}
+              />
+              <span>Calculate Contribution</span>
+            </label> */}
           </div>
         </div>
-
 
         {/* Second table */}
         <div className="grid grid-cols-6 col-span-6 bg-white rounded-lg gap-2 h-[250px] overflow-x-auto overflow-y-auto">
           <table className="table-fixed w-full border-l border-blue-300 border-r border-blue-300 rounded-lg">
             <thead className="bg-blue-300 border-b border-blue-300 py-2 px-2 rounded-lg">
               <tr className="bg-gray-200">
-                <th className="w-[50px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left pl-[15px]">SL</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">Employee Code</th>
-                <th className="w-[250px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">Employee Name</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Basic Salary</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">House Rent</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Medical Allowance</th>
-                <th className="w-[100px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Conveyance</th>
-                <th className="w-[100px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Overtime</th>
-                <th className="w-[130px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Other Allowance</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Gross Earning</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Adjust Loan</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Advance Salary</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Tax Amount</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Unpaid Leave</th>
-                <th className="w-[200px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">House Rent Deduction</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Excess Mobile Bill</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Other Deduction</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">Total Deduction</th>
-                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 pr-[20px] text-right">Net Payment</th>
+                <th className="w-[50px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left pl-[15px]">
+                  SL
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">
+                  Employee Code
+                </th>
+                <th className="w-[250px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left">
+                  Employee Name
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Basic Salary
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  House Rent
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Medical Allowance
+                </th>
+                <th className="w-[100px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Conveyance
+                </th>
+                <th className="w-[100px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Overtime
+                </th>
+                <th className="w-[130px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Other Allowance
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Gross Earning
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Adjust Loan
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Advance Salary
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Tax Amount
+                </th>
+
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  PF Amount
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Employer Contri
+                </th>
+
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Unpaid Leave
+                </th>
+                <th className="w-[200px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  House Rent Deduction
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Excess Mobile Bill
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Other Deduction
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-right">
+                  Total Deduction
+                </th>
+                <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 pr-[20px] text-right">
+                  Net Payment
+                </th>
               </tr>
             </thead>
 
@@ -552,14 +680,30 @@ export default function GenerateSalar() {
               {salaryDetails.length > 0 ? (
                 salaryDetails.map((salaryDetail) => (
                   <tr key={salaryDetail.sl} className="border-b">
-                    <td className="pl-[15px] border-b border-blue-300">{salaryDetail.sl}</td>
-                    <td className="pl-[10px] border-b border-blue-300">{salaryDetail.employeeCode}</td>
-                    <td className="pl-[10px] border-b border-blue-300">{salaryDetail.employeeName}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.basicSalary}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.houseRentAllowance}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.medicalAllowance}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.conveyance}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.overtime}</td>
+                    <td className="pl-[15px] border-b border-blue-300">
+                      {salaryDetail.sl}
+                    </td>
+                    <td className="pl-[10px] border-b border-blue-300">
+                      {salaryDetail.employeeCode}
+                    </td>
+                    <td className="pl-[10px] border-b border-blue-300">
+                      {salaryDetail.employeeName}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.basicSalary}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.houseRentAllowance}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.medicalAllowance}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.conveyance}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.overtime}
+                    </td>
                     <td className="pl-[20px] pr-[20px] border-b border-blue-300">
                       <input
                         className="border border-gray-200 w-[100px] text-right items-right"
@@ -571,20 +715,37 @@ export default function GenerateSalar() {
                             prev.map((item) =>
                               item.sl === salaryDetail.sl
                                 ? recalcSalary({
-                                  ...item,
-                                  otherAllowance: parseFloat(e.target.value) || 0,
-                                })
-                                : item
-                            )
+                                    ...item,
+                                    otherAllowance:
+                                      parseFloat(e.target.value) || 0,
+                                  })
+                                : item,
+                            ),
                           )
                         }
                       />
                     </td>
-                    <td className="text-right text-lg pr-[10px] border-b border-blue-300">{salaryDetail.grossEarnings}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.loanAdjust}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.adjustAdvanceSalary}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.taxAmount}</td>
-                    <td className="text-right pr-[10px] border-b border-blue-300">{salaryDetail.adjustUnpaidLeave}</td>
+                    <td className="text-right text-lg pr-[10px] border-b border-blue-300">
+                      {salaryDetail.grossEarnings}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.loanAdjust}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.adjustAdvanceSalary}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.taxAmount}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.pfAmount}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.employerContribution}
+                    </td>
+                    <td className="text-right pr-[10px] border-b border-blue-300">
+                      {salaryDetail.adjustUnpaidLeave}
+                    </td>
                     <td className="border w-[120px] text-right items-right border-b border-blue-200">
                       <input
                         className="border w-[120px] text-right items-right border-b border-blue-200"
@@ -596,11 +757,12 @@ export default function GenerateSalar() {
                             prev.map((item) =>
                               item.sl === salaryDetail.sl
                                 ? recalcSalary({
-                                  ...item,
-                                  houseRentDeduction: parseFloat(e.target.value) || 0,
-                                })
-                                : item
-                            )
+                                    ...item,
+                                    houseRentDeduction:
+                                      parseFloat(e.target.value) || 0,
+                                  })
+                                : item,
+                            ),
                           )
                         }
                       />
@@ -616,11 +778,12 @@ export default function GenerateSalar() {
                             prev.map((item) =>
                               item.sl === salaryDetail.sl
                                 ? recalcSalary({
-                                  ...item,
-                                  excessMobileBill: parseFloat(e.target.value) || 0,
-                                })
-                                : item
-                            )
+                                    ...item,
+                                    excessMobileBill:
+                                      parseFloat(e.target.value) || 0,
+                                  })
+                                : item,
+                            ),
                           )
                         }
                       />
@@ -636,17 +799,22 @@ export default function GenerateSalar() {
                             prev.map((item) =>
                               item.sl === salaryDetail.sl
                                 ? recalcSalary({
-                                  ...item,
-                                  otherDeduction: parseFloat(e.target.value) || 0,
-                                })
-                                : item
-                            )
+                                    ...item,
+                                    otherDeduction:
+                                      parseFloat(e.target.value) || 0,
+                                  })
+                                : item,
+                            ),
                           )
                         }
                       />
                     </td>
-                    <td className="text-right border-b border-blue-300">{salaryDetail.totalDeduction}</td>
-                    <td className="text-right text-lg pr-[20px] border-b border-blue-300">{salaryDetail.netEarnings}</td>
+                    <td className="text-right border-b border-blue-300">
+                      {salaryDetail.totalDeduction}
+                    </td>
+                    <td className="text-right text-lg pr-[20px] border-b border-blue-300">
+                      {salaryDetail.netEarnings}
+                    </td>
                   </tr>
                 ))
               ) : (
@@ -668,10 +836,7 @@ export default function GenerateSalar() {
             Submit Salary
           </button>
         </div>
-
-
       </div>
     </div>
   );
-};
-
+}

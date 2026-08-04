@@ -63,7 +63,7 @@ interface SalaryDetail {
   grossEarnings: number;
   adjustUnPaidLeave: number;
   taxAmount: number;
-  pFAmount: number;
+  pfAmount: number;
   employerContribution: number;
   supplementaryPF: number;
   loanAdjust: number;

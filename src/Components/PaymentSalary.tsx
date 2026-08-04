@@ -21,7 +21,7 @@ interface SalaryDetail {
   grossEarnings: number;
   adjustUnpaidLeave: number;
   taxAmount: number;
-  pFAmount: number;
+  pfAmount: number;
   employerContribution: number;
   supplementaryPF: number;
   loanAdjust: number;
@@ -247,7 +247,8 @@ const PaymentSalary: React.FC = () => {
             employeeID: detail.employeeID,
             amount: detail.netEarnings,
             taxAmount: detail.taxAmount,
-            pfAmount: detail.pFAmount,
+            pfAmount: detail.pfAmount,
+            employerContribution: detail.employerContribution,
             loanAdjust: detail.loanAdjust,
             adjustAdvanceSalary: detail.adjustAdvanceSalary,
             adjustUnpaidLeave: detail.adjustUnpaidLeave,
@@ -399,6 +400,10 @@ const PaymentSalary: React.FC = () => {
               <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left"></th>
               <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left"></th>
               <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left"></th>
+              <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left"></th>
+              <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left"></th>
+              <th className="w-[150px] sticky top-0 z-10 bg-blue-300 text-sm px-2 py-2 text-left"></th>
+
             </tr>
           </thead>
 
@@ -498,6 +503,14 @@ const PaymentSalary: React.FC = () => {
                           <th className="w-[150px] sticky top-0 z-10 bg-green-500 text-white text-sm px-2 py-2 text-right">
                             Tax Amount
                           </th>
+
+                          <th className="w-[150px] sticky top-0 z-10 bg-green-500 text-white text-sm px-2 py-2 text-right">
+                            PF Amount
+                          </th>
+                          <th className="w-[150px] sticky top-0 z-10 bg-green-500 text-white text-sm px-2 py-2 text-right">
+                            Employer Amount
+                          </th>
+
                           <th className="w-[150px] sticky top-0 z-10 bg-green-500 text-white text-sm px-2 py-2 text-right">
                             Unpaid Leave
                           </th>
@@ -577,6 +590,14 @@ const PaymentSalary: React.FC = () => {
                             <td className="px-2 py-2 text-right">
                               {detail.taxAmount}
                             </td>
+
+                            <td className="px-2 py-2 text-right">
+                              {detail.pfAmount}
+                            </td>
+                            <td className="px-2 py-2 text-right">
+                              {detail.employerContribution}
+                            </td>
+
                             <td className="px-2 py-2 text-right">
                               {detail.adjustUnpaidLeave}
                             </td>
@@ -595,7 +616,7 @@ const PaymentSalary: React.FC = () => {
                             <td className="px-2 py-2 text-right">
                               {detail.netEarnings}
                             </td>
-                            <td className="px-2 py-2 text-left">—</td>
+                            {/* <td className="px-2 py-2 text-left">—</td> */}
                           </tr>
                         ))}
                       </>
