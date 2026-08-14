@@ -221,60 +221,145 @@ export default function GenerateSalar() {
       console.error("Error processing salary:", error);
     }
   };
-
-  // const generateIndividualEmployeeSalary = async () => {
-  //   try {
-  //     const rows = employees
-  //       .filter((e) => selectedEmployees.includes(e.employeeID))
-  //       .map((e) => ({
-  //         employeeID: e.employeeID,
-  //         employeeCode: e.employeeCode,
-  //         employeeName: e.employeeName,
-  //         payscaleID: e.payscaleID,
-  //         payscaleName: e.payscaleName,
-  //         adjustUnpaidLeave: unpaidLeave,
-  //         adjustAdvanceSalary: advanceSalary,
-  //         loanAdjust: loanAdjust,
-  //       }));
-
-  //     const res = await api.post<{ salaryDetails: SalaryDetail[] }>(
-  //       "/api/generatesalary/generateActiveEmployeeSalary",
-  //       rows, // 👈 send raw array (no wrapper)
-  //     );
-
-  //     setSalaryDetails(res.data.salaryDetails);
-  //   } catch (error) {
-  //     console.error("Error processing salary:", error);
-  //   }
-  // };
-
+  interface ApiErrorResponse {
+    detail?: string | Array<{ msg?: string }>;
+  }
   const submitSalaryAndSalaryDetailInformation = async () => {
     try {
+      // ============================================
+      // Validate salary details
+      // ============================================
+      if (!salaryDetails || salaryDetails.length === 0) {
+        alert("Please generate salary before submitting.");
+        return;
+      }
+
+      // ============================================
+      // Calculate total salary
+      // ============================================
+      const totalGross = salaryDetails.reduce(
+        (sum, row) => sum + Number(row.grossEarnings || 0),
+        0,
+      );
+
+      const totalDeduction = salaryDetails.reduce(
+        (sum, row) => sum + Number(row.totalDeduction || 0),
+        0,
+      );
+
+      const totalNet = salaryDetails.reduce(
+        (sum, row) => sum + Number(row.netEarnings || 0),
+        0,
+      );
+
+      const totalEmployerContribution = salaryDetails.reduce(
+        (sum, row) => sum + Number(row.employerContribution || 0),
+        0,
+      );
+
+      // ============================================
+      // Prepare Salary payload
+      // ============================================
+      const salaryPayload = {
+        ...salary,
+
+        totalGross: Number(totalGross.toFixed(2)),
+        totalDeduction: Number(totalDeduction.toFixed(2)),
+        totalNet: Number(totalNet.toFixed(2)),
+        totalEmployerContribution: Number(totalEmployerContribution.toFixed(2)),
+      };
+
+      // ============================================
+      // Prepare Salary Detail payload
+      // ============================================
+      const salaryDetailPayload = salaryDetails.map((row) => ({
+        ...row,
+
+        basicSalary: Number(row.basicSalary || 0),
+        houseRentAllowance: Number(row.houseRentAllowance || 0),
+        medicalAllowance: Number(row.medicalAllowance || 0),
+        conveyance: Number(row.conveyance || 0),
+
+        overtime: Number(row.overtime || 0),
+        otherAllowance: Number(row.otherAllowance || 0),
+
+        grossEarnings: Number(row.grossEarnings || 0),
+
+        taxAmount: Number(row.taxAmount || 0),
+        pfAmount: Number(row.pfAmount || 0),
+        loanAdjust: Number(row.loanAdjust || 0),
+        adjustAdvanceSalary: Number(row.adjustAdvanceSalary || 0),
+        adjustUnpaidLeave: Number(row.adjustUnpaidLeave || 0),
+        houseRentDeduction: Number(row.houseRentDeduction || 0),
+        excessMobileBill: Number(row.excessMobileBill || 0),
+        otherDeduction: Number(row.otherDeduction || 0),
+
+        employerContribution: Number(row.employerContribution || 0),
+
+        totalDeduction: Number(row.totalDeduction || 0),
+        netEarnings: Number(row.netEarnings || 0),
+      }));
+
+      // ============================================
+      // Final API payload
+      // ============================================
       const payload = {
-        salary,
-        salaryDetails,
+        salary: salaryPayload,
+        salaryDetails: salaryDetailPayload,
         message: "Salary submission",
       };
 
+      console.log("====================================");
+      console.log("Salary Generation Payload");
+      console.log("====================================");
+      console.log(payload);
+      console.log("====================================");
+
+      // ============================================
+      // Save Salary + Salary Details
+      // Backend will create journal
+      // ============================================
       const response = await api.post<{ message?: string }>(
         "/api/generatesalary/insertSalaryInformation",
         payload,
       );
 
-      alert(response.data.message ?? "Salary saved successfully!");
+      // ============================================
+      // Success
+      // ============================================
+      alert(
+        response.data.message ??
+          "Salary saved and journal created successfully!",
+      );
+
+      // ============================================
+      // Clear screen
+      // ============================================
       setSalaryDetails([]);
       setSelectedEmployees([]);
+
       setUnpaidLeave(false);
+      setEmployerContribution(false);
       setAdvanceSalary(false);
       setLoanAdjust(false);
       setSelectAll(false);
     } catch (err: unknown) {
-      if (isAxiosError(err)) {
+      if (isAxiosError<ApiErrorResponse>(err)) {
         console.error("Axios error:", err.response?.data ?? err.message);
+
+        const detail = err.response?.data?.detail;
+
+        if (typeof detail === "string") {
+          alert(detail);
+        } else if (Array.isArray(detail)) {
+          alert(detail.map((x) => x.msg ?? "Validation error").join("\n"));
+        } else {
+          alert("Failed to save salary and create journal.");
+        }
       } else {
         console.error("Unexpected error:", err);
+        alert("Failed to submit salary data."); 
       }
-      alert("Failed to submit salary data.");
     }
   };
 
@@ -591,7 +676,7 @@ export default function GenerateSalar() {
               />
               <span>Calculate PF Amount</span>
             </label>
-            {/* <label className="flex items-center space-x-1 pb-[10px] text-gray-900 text-lg">
+            <label className="flex items-center space-x-1 pb-[10px] text-gray-900 text-lg">
               <input
                 type="checkbox"
                 className="w-4 h-4 accent-blue-500"
@@ -599,7 +684,7 @@ export default function GenerateSalar() {
                 onChange={() => setEmployerContribution(!employerContribution)}
               />
               <span>Calculate Contribution</span>
-            </label> */}
+            </label>
           </div>
         </div>
 
