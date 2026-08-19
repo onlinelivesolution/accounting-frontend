@@ -5,7 +5,6 @@ import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Menu, X } from "lucide-react";
 import DepositWithdraw from "./Components/DepositWithdraw";
-import Dashboard from "./pages/Dashboard";
 import LoginUser from "./Components/LoginUser";
 import JournalEntry from "./Components/JournalEntry";
 import BalanceSheet from "./Components/BalanceSheet";
@@ -39,6 +38,18 @@ import UserInfos from "./Components/UserInfo";
 import PermissionAssign from "./Components/RolePermissionAssign";
 import AdminDashboard from "./Components/AdminDashboard";
 import PaymentSalary from "./Components/PaymentSalary";
+import Students from "./Components/Students";
+import StudentForm from "./Components/StudentForm";
+import AcademicYear from "./Components/AcademicYears";
+import Enrollment from "./Components/Enrollments";
+import Examinations from "./Components/Examinations";
+import Feeheads from "./Components/Feeheads";
+import Feepayments from "./Components/Feepayments";
+import Promotions from "./Components/Promotions";
+import Results from "./Components/Results";
+import Sections from "./Components/Sections";
+import Classes from "./Components/Classes";
+import Studentfees from "./Components/Studentfees";
 
 // ------- Types -------
 interface MenuItem {
@@ -51,8 +62,8 @@ interface MenuItem {
 // DropdownMenu Component
 // ---------------------
 interface DropdownMenuProps {
-  label: string; // label shown on parent button (e.g. "Manage Accounts")
-  category: string; // category key used to filter menuItems
+  label: string;
+  category: string;
   menuItems: MenuItem[];
   isOpen: boolean;
   onToggle: (category: string) => void;
@@ -61,9 +72,21 @@ interface DropdownMenuProps {
 }
 
 const dropdownVariants = {
-  hidden: { opacity: 0, y: -6, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -6, scale: 0.98 },
+  hidden: {
+    opacity: 0,
+    y: -6,
+    scale: 0.98,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+  },
+  exit: {
+    opacity: 0,
+    y: -6,
+    scale: 0.98,
+  },
 };
 
 const DropdownMenu: React.FC<DropdownMenuProps> = ({
@@ -80,29 +103,50 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        onToggle(""); // close all
+        onToggle("");
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [onToggle]);
 
   const items = menuItems.filter((m) => m.category === category);
 
+  if (items.length === 0) {
+    return null;
+  }
+
   return (
     <div className="relative" ref={ref}>
       <button
+        type="button"
         onClick={() => onToggle(category)}
         aria-expanded={isOpen}
-        className={`flex items-center px-3 py-2 transition rounded ${
-          activeParent
-            ? "text-blue-700 text-[10px] bg-blue-50"
-            : "text-gray-700 hover:text-blue-600"
-        }`}
+        className={`
+          flex items-center justify-between
+          whitespace-nowrap
+          rounded-lg
+          px-3 py-2
+          text-sm
+          transition-all duration-200
+          ${activeParent || isOpen
+            ? "bg-blue-50 text-blue-700 font-semibold"
+            : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+          }
+        `}
       >
         <span className="select-none">{label}</span>
+
         <ChevronDown
-          className={`ml-2 h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`
+            ml-2 h-4 w-4
+            transition-transform duration-200
+            ${isOpen ? "rotate-180" : ""}
+          `}
         />
       </button>
 
@@ -114,22 +158,44 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
             exit="exit"
             variants={dropdownVariants}
             transition={{ duration: 0.16 }}
-            className="absolute mt-2 w-52 bg-white border border-blue-300 rounded-xl shadow-lg z-50 overflow-hidden"
+            className="
+              absolute
+              left-0
+              top-full
+              mt-2
+              z-[100]
+              w-56
+              max-h-[70vh]
+              overflow-y-auto
+              rounded-xl
+              border
+              border-gray-200
+              bg-white
+              shadow-xl
+            "
           >
             {items.map((item) => {
               const isActive = location.pathname === item.path;
 
               return (
                 <button
+                  type="button"
                   key={item.path}
-                  onClick={() => {
-                    onNavigate(item.path);
-                  }}
+                  onClick={() => onNavigate(item.path)}
                   className={`
-              block w-full text-left px-4 py-2 
-              transition-colors duration-200
-              ${isActive ? "bg-blue-400 text-white rounded" : "hover:bg-blue-200 rounded"}
-            `}
+                    block
+                    w-full
+                    px-4
+                    py-2.5
+                    text-left
+                    text-sm
+                    transition-colors
+                    duration-150
+                    ${isActive
+                      ? "bg-blue-500 text-white"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                    }
+                  `}
                 >
                   {item.name}
                 </button>
@@ -150,12 +216,15 @@ interface MobileSidebarProps {
   onClose: () => void;
   menuItems: MenuItem[];
   onNavigate: (path: string) => void;
-  hasPermission: (permissionName: string, actionName: string) => boolean;
 }
 
 const sidebarVariants = {
-  closed: { x: "100%" },
-  open: { x: 0 },
+  closed: {
+    x: "100%",
+  },
+  open: {
+    x: 0,
+  },
 };
 
 const MobileSidebar: React.FC<MobileSidebarProps> = ({
@@ -164,75 +233,263 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
   menuItems,
   onNavigate,
 }) => {
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
+
+  const categories = Array.from(
+    new Set(
+      menuItems
+        .map((m) => m.category)
+        .filter((category): category is string => Boolean(category)),
+    ),
+  );
+
+  const handleNavigate = (path: string) => {
+    onNavigate(path);
+    onClose();
+    setOpenCategory(null);
+  };
+
+  const toggleCategory = (category: string) => {
+    setOpenCategory((previous) => (previous === category ? null : category));
+  };
+
+  useEffect(() => {
+    if (!open) {
+      setOpenCategory(null);
+    }
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && (
         <>
-          {/* backdrop */}
+          {/* Backdrop */}
           <motion.div
-            onClick={onClose}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.35 }}
+            animate={{ opacity: 0.45 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black z-40"
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="
+              fixed
+              inset-0
+              z-[90]
+              bg-black
+              md:hidden
+            "
           />
 
+          {/* Mobile Menu */}
           <motion.aside
-            className="fixed right-0 top-0 bottom-0 w-72 bg-white z-50 shadow-xl p-4 overflow-y-auto"
             initial="closed"
             animate="open"
             exit="closed"
             variants={sidebarVariants}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+            }}
+            className="
+              fixed
+              right-0
+              top-0
+              bottom-0
+              z-[100]
+              flex
+              w-[85vw]
+              max-w-sm
+              flex-col
+              bg-white
+              shadow-2xl
+              md:hidden
+            "
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[10px]">Menu</h2>
-              <button onClick={onClose} aria-label="Close menu">
-                <X />
+            {/* Header */}
+            <div
+              className="
+                flex
+                shrink-0
+                items-center
+                justify-between
+                border-b
+                border-gray-200
+                px-5
+                py-4
+              "
+            >
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">Menu</h2>
+
+                <p className="text-xs text-gray-500">Navigation</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close menu"
+                className="
+                  rounded-lg
+                  p-2
+                  text-gray-600
+                  transition
+                  hover:bg-gray-100
+                  hover:text-gray-900
+                "
+              >
+                <X className="h-6 w-6" />
               </button>
             </div>
 
-            <nav className="flex flex-col space-y-2">
+            {/* Menu Content */}
+            <nav
+              className="
+                flex-1
+                overflow-y-auto
+                px-3
+                py-4
+              "
+            >
+              {/* Dashboard / Non-category items */}
               {menuItems
-                .filter((i) => !i.category)
-                .map((i) => (
-                  <button
-                    key={i.path}
-                    onClick={() => {
-                      onNavigate(i.path);
-                      onClose();
-                    }}
-                    className="text-left px-3 py-2 rounded hover:bg-gray-100"
-                  >
-                    {i.name}
-                  </button>
-                ))}
+                .filter((item) => !item.category)
+                .map((item) => {
+                  const isActive = location.pathname === item.path;
 
-              {Array.from(
-                new Set(menuItems.map((m) => m.category).filter(Boolean)),
-              ).map((cat) => (
-                <div key={cat}>
-                  <div className="mt-3 mb-1 text-[10px] text-gray-500">
-                    {cat}
-                  </div>
-                  <div className="flex flex-col">
-                    {menuItems
-                      .filter((m) => m.category === cat)
-                      .map((m) => (
-                        <button
-                          key={m.path}
-                          onClick={() => {
-                            onNavigate(m.path);
-                            onClose();
-                          }}
-                          className="text-left px-3 py-2 rounded hover:bg-gray-100"
-                        >
-                          {m.name}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              ))}
+                  return (
+                    <button
+                      type="button"
+                      key={item.path}
+                      onClick={() => handleNavigate(item.path)}
+                      className={`
+                        mb-1
+                        w-full
+                        rounded-lg
+                        px-4
+                        py-3
+                        text-left
+                        text-sm
+                        font-medium
+                        transition
+                        ${isActive
+                          ? "bg-blue-500 text-white"
+                          : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                        }
+                      `}
+                    >
+                      {item.name}
+                    </button>
+                  );
+                })}
+
+              {/* Categories */}
+              <div className="mt-2 space-y-1">
+                {categories.map((category) => {
+                  const isOpen = openCategory === category;
+
+                  const categoryItems = menuItems.filter(
+                    (item) => item.category === category,
+                  );
+
+                  const categoryIsActive = categoryItems.some(
+                    (item) => item.path === location.pathname,
+                  );
+
+                  return (
+                    <div key={category} className="border-b border-gray-100">
+                      {/* Category Button */}
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(category)}
+                        aria-expanded={isOpen}
+                        className={`
+                          flex
+                          w-full
+                          items-center
+                          justify-between
+                          rounded-lg
+                          px-4
+                          py-3
+                          text-left
+                          text-sm
+                          font-semibold
+                          transition
+                          ${categoryIsActive
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-700 hover:bg-gray-50"
+                          }
+                        `}
+                      >
+                        <span>{category}</span>
+
+                        <ChevronDown
+                          className={`
+                            h-5 w-5
+                            transition-transform
+                            duration-200
+                            ${isOpen ? "rotate-180" : ""}
+                          `}
+                        />
+                      </button>
+
+                      {/* Submenu */}
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            initial={{
+                              height: 0,
+                              opacity: 0,
+                            }}
+                            animate={{
+                              height: "auto",
+                              opacity: 1,
+                            }}
+                            exit={{
+                              height: 0,
+                              opacity: 0,
+                            }}
+                            transition={{
+                              duration: 0.2,
+                            }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mb-2 ml-2 space-y-1 border-l-2 border-blue-100 pl-2">
+                              {categoryItems.map((item) => {
+                                const isActive =
+                                  location.pathname === item.path;
+
+                                return (
+                                  <button
+                                    type="button"
+                                    key={item.path}
+                                    onClick={() => handleNavigate(item.path)}
+                                    className={`
+                                        block
+                                        w-full
+                                        rounded-lg
+                                        px-4
+                                        py-2.5
+                                        text-left
+                                        text-sm
+                                        transition
+                                        ${isActive
+                                        ? "bg-blue-500 text-white"
+                                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                      }
+                                      `}
+                                  >
+                                    {item.name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
             </nav>
           </motion.aside>
         </>
@@ -391,6 +648,75 @@ const App: React.FC = () => {
       });
     }
 
+    // School Management
+    if (user?.isSuperAdmin || hasPermission("Education", "View")) {
+      items.push({
+        name: "Academic Year",
+        path: "/school/academic-year",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Classes",
+        path: "/school/classes",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Sections",
+        path: "/school/sections",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Students",
+        path: "/school/students",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Enrollment",
+        path: "/school/enrollment",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Examinations",
+        path: "/school/examinations",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Results",
+        path: "/school/results",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Promotion",
+        path: "/school/promotion",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Fee Heads",
+        path: "/school/fee-heads",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Student Fees",
+        path: "/school/student-fees",
+        category: "Education",
+      });
+
+      items.push({
+        name: "Fee Payment",
+        path: "/school/fee-payment",
+        category: "Education",
+      });
+    }
+
     // Financial
     if (user?.isSuperAdmin || hasPermission("Financial", "View")) {
       items.push({
@@ -462,9 +788,23 @@ const App: React.FC = () => {
         setDropdownOpen(null);
       }
     };
+
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Prevent background scrolling when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   const toggleDropdown = (cat: string) => {
     setDropdownOpen((prev) => (prev === cat ? null : cat));
@@ -485,100 +825,218 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       {user && (
-        <header className="bg-white shadow-md px-2 py-2 flex items-center justify-between md:px-6">
+        <header
+          className="
+      sticky
+      top-0
+      z-[80]
+      w-full
+      border-b
+      border-gray-200
+      bg-white
+      shadow-sm
+    "
+        >
           <div
-            className="flex items-center space-x-4 md:space-x-6"
-            ref={menuRef}
+            className="
+        flex
+        min-h-[64px]
+        w-full
+        items-center
+        justify-between
+        gap-3
+        px-3
+        py-2
+        sm:px-4
+        md:px-6
+      "
           >
-            <div className="flex items-center">
-              <img
-                src={logo}
-                alt="Online Solution Logo"
-                className="h-8 w-auto pr-[10px]"
-              />
-              <h1 className="text-xl font-bold">
-                <span style={{ color: "#00CDCD" }}>Online</span>{" "}
-                <span style={{ color: "#8B1C62" }}>Solution</span>
-              </h1>
+            {/* Left side */}
+            <div className="flex min-w-0 items-center gap-3" ref={menuRef}>
+              {/* Logo */}
+              <div className="flex shrink-0 items-center">
+                <img
+                  src={logo}
+                  alt="Online Solution Logo"
+                  className="
+              h-8
+              w-auto
+              sm:h-9
+            "
+                />
+
+                <h1
+                  className="
+              ml-2
+              hidden
+              whitespace-nowrap
+              text-lg
+              font-bold
+              sm:block
+              md:text-xl
+            "
+                >
+                  <span style={{ color: "#00CDCD" }}>Online</span>{" "}
+                  <span style={{ color: "#8B1C62" }}>Solution</span>
+                </h1>
+              </div>
+
+              {/* Desktop navigation */}
+              <nav
+                className="
+            hidden
+            min-w-0
+            items-center
+            gap-1
+            lg:flex
+            xl:gap-2
+          "
+              >
+                {/* Non-category items */}
+                {menuItems
+                  .filter((item) => !item.category)
+                  .map((item) => {
+                    const isActive = location.pathname === item.path;
+
+                    return (
+                      <button
+                        type="button"
+                        key={item.path}
+                        onClick={() => navigateAndClose(item.path)}
+                        className={`
+                    whitespace-nowrap
+                    rounded-lg
+                    px-2.5
+                    py-2
+                    text-sm
+                    transition
+                    xl:px-3
+                    ${isActive
+                            ? "bg-blue-50 font-semibold text-blue-700"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+                          }
+                  `}
+                      >
+                        {item.name}
+                      </button>
+                    );
+                  })}
+
+                {/* Category dropdowns */}
+                {Array.from(
+                  new Set(
+                    menuItems
+                      .map((item) => item.category)
+                      .filter((category): category is string =>
+                        Boolean(category),
+                      ),
+                  ),
+                ).map((category) => (
+                  <DropdownMenu
+                    key={category}
+                    label={category}
+                    category={category}
+                    menuItems={menuItems}
+                    isOpen={dropdownOpen === category}
+                    onToggle={toggleDropdown}
+                    onNavigate={navigateAndClose}
+                    activeParent={activeParent() === category}
+                  />
+                ))}
+              </nav>
             </div>
 
-            {/* Desktop nav */}
-            <nav className="hidden md:flex items-center space-x-3">
-              {menuItems
-                .filter((i) => !i.category)
-                .map((i) => (
-                  <button
-                    key={i.path}
-                    onClick={() => navigateAndClose(i.path)}
-                    className={`px-3 py-2 rounded transition ${
-                      location.pathname === i.path
-                        ? "text-blue-700 font-semibold bg-blue-50"
-                        : "text-gray-700 hover:text-blue-600"
-                    }`}
-                  >
-                    {i.name}
-                  </button>
-                ))}
-
-              {/* Dynamic Dropdowns */}
-              {Array.from(
-                new Set(menuItems.map((item) => item.category).filter(Boolean)),
-              ).map((category) => (
-                <DropdownMenu
-                  key={category}
-                  label={category!}
-                  category={category!}
-                  menuItems={menuItems}
-                  isOpen={dropdownOpen === category}
-                  onToggle={toggleDropdown}
-                  onNavigate={navigateAndClose}
-                  activeParent={activeParent() === category}
-                />
-              ))}
-            </nav>
-          </div>
-
-          {/* Right side: logout + mobile menu button */}
-          <div className="flex items-center space-x-3">
-            <span className="hidden md:inline text-gray-700 font-medium">
-              {user.userName}
-            </span>
-            <button
-              onClick={() => {
-                logout();
-                navigate("/");
-              }}
-              className="text-red-600 font-semibold hover:underline"
+            {/* Right side */}
+            <div
+              className="
+          flex
+          shrink-0
+          items-center
+          gap-2
+          sm:gap-3
+        "
             >
-              Logout
-            </button>
-
-            {/* mobile button */}
-            <div className="md:hidden">
-              <button
-                onClick={() => setMobileOpen(true)}
-                aria-label="Open menu"
+              {/* Username */}
+              <span
+                className="
+            hidden
+            max-w-[160px]
+            truncate
+            text-sm
+            font-medium
+            text-gray-700
+            xl:block
+          "
+                title={user.userName}
               >
-                <Menu />
+                {user.userName}
+              </span>
+
+              {/* Logout */}
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  setMobileOpen(false);
+                  navigate("/");
+                }}
+                className="
+            hidden
+            rounded-lg
+            px-2
+            py-2
+            text-sm
+            font-semibold
+            text-red-600
+            transition
+            hover:bg-red-50
+            hover:text-red-700
+            sm:block
+          "
+              >
+                Logout
+              </button>
+
+              {/* Mobile menu button */}
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open navigation menu"
+                aria-expanded={mobileOpen}
+                className="
+            rounded-lg
+            p-2
+            text-gray-700
+            transition
+            hover:bg-gray-100
+            lg:hidden
+          "
+              >
+                <Menu className="h-6 w-6" />
               </button>
             </div>
           </div>
         </header>
       )}
 
-      {/* Mobile sidebar */}
+      {/* Mobile Sidebar */}
       <MobileSidebar
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         menuItems={menuItems}
         onNavigate={navigateAndClose}
-        hasPermission={
-          hasPermission as unknown as (a: string, b: string) => boolean
-        }
       />
 
       {/* Main area */}
-      <main className="flex-1 p-4 md:p-6">
+      <main
+        className="
+    min-w-0
+    flex-1
+    p-3
+    sm:p-4
+    md:p-6
+  "
+      >
         <Routes>
           <Route path="/" element={<LoginUser />} />
           <Route path="/login" element={<LoginUser />} />
@@ -1012,6 +1470,106 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute permissionName="User" actionName="Update User">
                 <PermissionAssign />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/students"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="View">
+                <Students />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/students/new"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <StudentForm />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/academic-year"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <AcademicYear />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/Classes"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Classes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/school/Sections"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Sections />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/school/Enrollment"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Enrollment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/school/Examinations"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Examinations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/school/Results"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Results />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/school/Promotion"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Promotions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/school/fee-heads"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Feeheads />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/school/student-fees"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Studentfees />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/school/student-fees"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="Add">
+                <Feepayments />
               </ProtectedRoute>
             }
           />
