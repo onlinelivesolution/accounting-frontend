@@ -1,126 +1,137 @@
 import api from "@/utils/axios";
 
 export interface Student {
-    studentID: number;
+  studentID: number;
 
-    studentCode: string;
-    admissionNo: string;
+  studentCode: string;
+  admissionNo: string;
 
-    firstName: string;
-    middleName?: string | null;
-    lastName?: string | null;
+  firstName: string;
+  middleName?: string | null;
+  lastName?: string | null;
 
-    dateOfBirth?: string | null;
+  dateOfBirth?: string | null;
 
-    gender?: string | null;
-    bloodGroup?: string | null;
+  gender?: string | null;
+  bloodGroup?: string | null;
 
-    photoPath?: string | null;
+  photoPath?: string | null;
 
-    phone?: string | null;
-    email?: string | null;
+  phone?: string | null;
+  email?: string | null;
 
-    address?: string | null;
-    city?: string | null;
-    postalCode?: string | null;
+  address?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
 
-    admissionDate?: string | null;
+  admissionDate?: string | null;
 
-    status: string;
+  status: string;
 
-    createdDate?: string;
-    updatedDate?: string | null;
+  createdDate?: string;
+  updatedDate?: string | null;
 }
 
 export interface StudentCreateRequest {
-    studentCode: string;
-    admissionNo: string;
+  studentCode: string;
+  admissionNo: string;
 
-    firstName: string;
-    middleName?: string;
-    lastName?: string;
+  firstName: string;
+  middleName?: string;
+  lastName?: string;
 
-    dateOfBirth?: string;
+  dateOfBirth?: string;
 
-    gender?: string;
-    bloodGroup?: string;
+  gender?: string;
+  bloodGroup?: string;
 
-    photoPath?: string;
+  photoPath?: string;
 
-    phone?: string;
-    email?: string;
+  phone?: string;
+  email?: string;
 
-    address?: string;
-    city?: string;
-    postalCode?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
 
-    admissionDate?: string;
+  admissionDate?: string;
 }
 
-export interface StudentUpdateRequest
-    extends Partial<StudentCreateRequest> {
-    status?: string;
+export interface StudentUpdateRequest {
+  studentCode?: string;
+  admissionNo: string;
+  firstName: string;
+  middleName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  bloodGroup?: string;
+  photoPath?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  admissionDate?: string;
+}
+
+export interface StudentUpdateRequest extends Partial<StudentCreateRequest> {
+  status?: string;
 }
 
 const API_URL = "/api/students";
 
-
 export const getStudents = async (): Promise<Student[]> => {
+  const response = await api.get<Student[]>(`${API_URL}/getStudents`);
 
-    const response = await api.get<Student[]>(
-        `${API_URL}/getStudents`
-    );
-
-    return response.data;
+  return response.data;
 };
 
+export const getStudent = async (studentID: number): Promise<Student> => {
+  const response = await api.get<Student>(`${API_URL}/${studentID}`);
 
-export const getStudent = async (
-    studentID: number
-): Promise<Student> => {
-
-    const response = await api.get<Student>(
-        `${API_URL}/${studentID}`
-    );
-
-    return response.data;
+  return response.data;
 };
 
+export const getStudentById = async (studentID: number): Promise<Student> => {
+  const response = await api.get<Student>(`/api/students/${studentID}`);
+
+  return response.data;
+};
 
 export const createStudent = async (
-    data: StudentCreateRequest
+  data: StudentCreateRequest,
 ): Promise<Student> => {
+  const response = await api.post<Student>(API_URL, data);
 
-    const response = await api.post<Student>(
-        API_URL,
-        data
-    );
-
-    return response.data;
+  return response.data;
 };
 
+export interface NextStudentCodeResponse {
+  studentCode: string;
+}
+
+export const getNextStudentCode = async (): Promise<string> => {
+  const response = await api.get<{ studentCode: string }>(
+    "/api/students/next-student-code",
+  );
+
+  return response.data.studentCode;
+};
 
 export const updateStudent = async (
-    studentID: number,
-    data: StudentUpdateRequest
+  studentID: number,
+  data: StudentUpdateRequest,
 ): Promise<Student> => {
+  const response = await api.put<Student>(`${API_URL}/${studentID}`, data);
 
-    const response = await api.put<Student>(
-        `${API_URL}/${studentID}`,
-        data
-    );
-
-    return response.data;
+  return response.data;
 };
 
-
 export const deactivateStudent = async (
-    studentID: number
+  studentID: number,
 ): Promise<Student> => {
+  const response = await api.put<Student>(`${API_URL}/${studentID}/deactivate`);
 
-    const response = await api.put<Student>(
-        `${API_URL}/${studentID}/deactivate`
-    );
-
-    return response.data;
+  return response.data;
 };

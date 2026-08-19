@@ -38,8 +38,8 @@ import UserInfos from "./Components/UserInfo";
 import PermissionAssign from "./Components/RolePermissionAssign";
 import AdminDashboard from "./Components/AdminDashboard";
 import PaymentSalary from "./Components/PaymentSalary";
-import Students from "./Components/Students";
-import StudentForm from "./Components/StudentForm";
+import StudentList from "./Components/students/StudentList";
+import StudentAdd from "./Components/students/StudentAdd";
 import AcademicYear from "./Components/AcademicYears";
 import Enrollment from "./Components/Enrollments";
 import Examinations from "./Components/Examinations";
@@ -50,6 +50,8 @@ import Results from "./Components/Results";
 import Sections from "./Components/Sections";
 import Classes from "./Components/Classes";
 import Studentfees from "./Components/Studentfees";
+import StudentEdit from "./Components/students/StudentEdit";
+import StudentView from "./Components/students/StudentView";
 
 // ------- Types -------
 interface MenuItem {
@@ -133,9 +135,10 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
           px-3 py-2
           text-sm
           transition-all duration-200
-          ${activeParent || isOpen
-            ? "bg-blue-50 text-blue-700 font-semibold"
-            : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+          ${
+            activeParent || isOpen
+              ? "bg-blue-50 text-blue-700 font-semibold"
+              : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
           }
         `}
       >
@@ -191,9 +194,10 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                     text-sm
                     transition-colors
                     duration-150
-                    ${isActive
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                    ${
+                      isActive
+                        ? "bg-blue-500 text-white"
+                        : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                     }
                   `}
                 >
@@ -371,9 +375,10 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
                         text-sm
                         font-medium
                         transition
-                        ${isActive
-                          ? "bg-blue-500 text-white"
-                          : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                        ${
+                          isActive
+                            ? "bg-blue-500 text-white"
+                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                         }
                       `}
                     >
@@ -414,9 +419,10 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
                           text-sm
                           font-semibold
                           transition
-                          ${categoryIsActive
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-700 hover:bg-gray-50"
+                          ${
+                            categoryIsActive
+                              ? "bg-blue-50 text-blue-700"
+                              : "text-gray-700 hover:bg-gray-50"
                           }
                         `}
                       >
@@ -472,10 +478,11 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
                                         text-left
                                         text-sm
                                         transition
-                                        ${isActive
-                                        ? "bg-blue-500 text-white"
-                                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                                      }
+                                        ${
+                                          isActive
+                                            ? "bg-blue-500 text-white"
+                                            : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                        }
                                       `}
                                   >
                                     {item.name}
@@ -911,10 +918,11 @@ const App: React.FC = () => {
                     text-sm
                     transition
                     xl:px-3
-                    ${isActive
-                            ? "bg-blue-50 font-semibold text-blue-700"
-                            : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
-                          }
+                    ${
+                      isActive
+                        ? "bg-blue-50 font-semibold text-blue-700"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+                    }
                   `}
                       >
                         {item.name}
@@ -1477,17 +1485,35 @@ const App: React.FC = () => {
           <Route
             path="/school/students"
             element={
-              <ProtectedRoute permissionName="Education" actionName="View">
-                <Students />
+              <ProtectedRoute permissionName="Education" actionName="List">
+                <StudentList />
               </ProtectedRoute>
             }
           />
 
           <Route
-            path="/school/students/new"
+            path="/school/students/add"
             element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <StudentForm />
+              <ProtectedRoute permissionName="Education" actionName="add">
+                <StudentAdd />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/students/:studentID/edit"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="edit">
+                <StudentEdit />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/students/:studentID/view"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="view">
+                <StudentView />
               </ProtectedRoute>
             }
           />
