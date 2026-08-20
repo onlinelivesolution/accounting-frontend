@@ -52,6 +52,9 @@ import Classes from "./Components/Classes";
 import Studentfees from "./Components/Studentfees";
 import StudentEdit from "./Components/students/StudentEdit";
 import StudentView from "./Components/students/StudentView";
+import StudentEnrollmentList from "./Components/students/enrollment/StudentEnrollmentList";
+import StudentEnrollmentAdd from "./Components/students/enrollment/StudentEnrollmentAdd";
+import StudentEnrollmentEdit from "./Components/students/enrollment/StudentEnrollmentEdit";
 
 // ------- Types -------
 interface MenuItem {
@@ -683,7 +686,7 @@ const App: React.FC = () => {
 
       items.push({
         name: "Enrollment",
-        path: "/school/enrollment",
+        path: "/school/student-enrollments",
         category: "Education",
       });
 
@@ -1596,6 +1599,33 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute permissionName="Education" actionName="Add">
                 <Feepayments />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/student-enrollments"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="view">
+                <StudentEnrollmentList />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/student-enrollments/add"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="create">
+                <StudentEnrollmentAdd />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/school/student-enrollments/:enrollmentID/edit"
+            element={
+              <ProtectedRoute permissionName="Education" actionName="edit">
+                <StudentEnrollmentEdit />
               </ProtectedRoute>
             }
           />
