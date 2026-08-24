@@ -100,9 +100,11 @@ export const getStudentById = async (studentID: number): Promise<Student> => {
 };
 
 export const createStudent = async (
-  data: StudentCreateRequest,
+  payload: StudentCreateRequest,
 ): Promise<Student> => {
-  const response = await api.post<Student>(API_URL, data);
+  const response = await api.post<Student>("/api/students", payload);
+
+  console.log("Create student response:", response.data);
 
   return response.data;
 };
@@ -135,3 +137,49 @@ export const deactivateStudent = async (
 
   return response.data;
 };
+
+export const uploadStudentPhoto = async (studentID: number, file: File) => {
+  const formData = new FormData();
+
+  formData.append("file", file, file.name);
+
+  console.log("Uploading student photo...");
+
+  console.log("Student ID:", studentID);
+
+  console.log("Photo:", file);
+
+  for (const [key, value] of formData.entries()) {
+    console.log("FormData:", key, value);
+  }
+
+  const response = await api.post(`/api/students/${studentID}/photo`, formData);
+
+  console.log("Photo upload response:", response.data);
+
+  return response.data;
+};
+
+// export const uploadStudentPhoto = async (studentID: number, file: File) => {
+//   const formData = new FormData();
+
+//   formData.append("file", file);
+
+//   console.log("Uploading student photo:", studentID, file.name);
+
+//   const response = await api.post(`/api/students/${studentID}/photo`, formData);
+
+//   console.log("Photo upload response:", response.data);
+
+//   return response.data;
+// };
+
+// export const uploadStudentPhoto = async (studentID: number, file: File) => {
+//   const formData = new FormData();
+
+//   formData.append("file", file);
+
+//   const response = await api.post(`${API_URL}/${studentID}/photo`, formData);
+
+//   return response.data;
+// };

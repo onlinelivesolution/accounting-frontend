@@ -1,18 +1,23 @@
 import { FormEvent, useState, useEffect } from "react";
 import { ArrowLeft, Save } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
   createStudent,
   StudentCreateRequest,
   getNextStudentCode,
+  uploadStudentPhoto,
 } from "@/services/studentService";
 
 const StudentAdd = () => {
   const navigate = useNavigate();
-
+  const { studentID } = useParams<{ studentID: string }>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+  const [photoPreview, setPhotoPreview] = useState<string>("");
 
   const [form, setForm] = useState<StudentCreateRequest>({
     studentCode: "",
@@ -55,6 +60,11 @@ const StudentAdd = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
+    // Prevent double submit
+    if (loading) {
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -62,31 +72,101 @@ const StudentAdd = () => {
       const payload: StudentCreateRequest = {
         ...form,
 
-        // Convert empty optional fields to undefined
         middleName: form.middleName || undefined,
         lastName: form.lastName || undefined,
         dateOfBirth: form.dateOfBirth || undefined,
         gender: form.gender || undefined,
         bloodGroup: form.bloodGroup || undefined,
-        photoPath: form.photoPath || undefined,
         phone: form.phone || undefined,
         email: form.email || undefined,
         address: form.address || undefined,
         city: form.city || undefined,
         postalCode: form.postalCode || undefined,
         admissionDate: form.admissionDate || undefined,
+
+        // Photo is uploaded separately
+        photoPath: undefined,
       };
 
-      await createStudent(payload);
+      console.log("========== CREATE STUDENT ==========");
+      console.log("Student Code:", payload.studentCode);
+      console.log("Admission No:", payload.admissionNo);
+
+      // -----------------------------------------
+      // 1. Create student
+      // -----------------------------------------
+
+      const createdStudent = await createStudent(payload);
+
+      console.log("Created student:", createdStudent);
+
+      if (!createdStudent?.studentID) {
+        throw new Error(
+          "Student was created but studentID was not returned by the server.",
+        );
+      }
+
+      // -----------------------------------------
+      // 2. Upload photo
+      // -----------------------------------------
+
+      if (photoFile) {
+        console.log("Uploading photo for student:", createdStudent.studentID);
+
+        await uploadStudentPhoto(createdStudent.studentID, photoFile);
+      }
+
+      // -----------------------------------------
+      // 3. Navigate
+      // -----------------------------------------
 
       navigate("/school/students");
     } catch (err: any) {
       console.error("Create student error:", err);
 
-      setError(err?.response?.data?.detail || "Failed to create student.");
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "Failed to create student.",
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setError("Invalid image format. Please select JPG, PNG or WEBP.");
+      e.target.value = "";
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      setError("Student photo must not exceed 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setError("");
+    setPhotoFile(file);
+
+    setPhotoPreview((oldPreview) => {
+      if (oldPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(oldPreview);
+      }
+
+      return URL.createObjectURL(file);
+    });
   };
 
   const handleCancel = () => {
@@ -109,8 +189,6 @@ const StudentAdd = () => {
 
     loadNextStudentCode();
   }, []);
-
-
 
   return (
     <div className="p-6">
@@ -413,28 +491,54 @@ const StudentAdd = () => {
           </div>
         </div>
 
-        {/* Photo */}
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 mb-5">
             Student Photo
           </h2>
-
           <div className="max-w-md">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Photo Path
-            </label>
-
             <input
-              type="text"
-              name="photoPath"
-              value={form.photoPath}
-              onChange={handleChange}
-              placeholder="Optional photo path"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+
+                if (!file) {
+                  return;
+                }
+
+                setPhotoFile(file);
+
+                setPhotoPreview(URL.createObjectURL(file));
+              }}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="h-28 w-28 overflow-hidden rounded-lg border bg-gray-50">
+            {photoPreview ? (
+              <img
+                src={photoPreview}
+                alt="Student"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                No Photo
+              </div>
+            )}
+          </div>
+
+          <div>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handlePhotoChange}
             />
 
-            <p className="text-xs text-gray-500 mt-1">
-              We can add actual image upload later.
+            <p className="mt-1 text-xs text-gray-500">
+              JPG, PNG or WEBP. Maximum 5 MB.
             </p>
           </div>
         </div>

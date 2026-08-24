@@ -7,6 +7,7 @@ import {
   updateStudent,
   Student,
   StudentUpdateRequest,
+  uploadStudentPhoto,
 } from "@/services/studentService";
 
 const StudentEdit = () => {
@@ -16,6 +17,10 @@ const StudentEdit = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+  const [photoPreview, setPhotoPreview] = useState<string>("");
 
   const [form, setForm] = useState<StudentUpdateRequest>({
     studentCode: "",
@@ -126,17 +131,33 @@ const StudentEdit = () => {
         dateOfBirth: form.dateOfBirth || undefined,
         gender: form.gender || undefined,
         bloodGroup: form.bloodGroup || undefined,
-        photoPath: form.photoPath || undefined,
         phone: form.phone || undefined,
         email: form.email || undefined,
         address: form.address || undefined,
         city: form.city || undefined,
         postalCode: form.postalCode || undefined,
         admissionDate: form.admissionDate || undefined,
+
+        // Don't send photoPath from React when uploading
+        // the actual file separately.
+        photoPath: form.photoPath || undefined,
       };
 
+      // -----------------------------------------
+      // 1. Update student information
+      // -----------------------------------------
       await updateStudent(Number(studentID), payload);
 
+      // -----------------------------------------
+      // 2. Upload new photo if selected
+      // -----------------------------------------
+      if (photoFile) {
+        await uploadStudentPhoto(Number(studentID), photoFile);
+      }
+
+      // -----------------------------------------
+      // 3. Go back to student list
+      // -----------------------------------------
       navigate("/school/students");
     } catch (err: any) {
       console.error("Update student error:", err);
@@ -146,6 +167,82 @@ const StudentEdit = () => {
       setSaving(false);
     }
   };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setError("Invalid image format. Please select JPG, PNG or WEBP.");
+      e.target.value = "";
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      setError("Student photo must not exceed 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setError("");
+    setPhotoFile(file);
+
+    setPhotoPreview((oldPreview) => {
+      if (oldPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(oldPreview);
+      }
+
+      return URL.createObjectURL(file);
+    });
+  };
+  // const handleSubmit = async (e: FormEvent) => {
+  //   e.preventDefault();
+
+  //   if (!studentID) {
+  //     setError("Student ID is missing.");
+  //     return;
+  //   }
+
+  //   try {
+  //     setSaving(true);
+  //     setError("");
+
+  //     const payload: StudentUpdateRequest = {
+  //       ...form,
+
+  //       // Convert empty optional values to undefined
+  //       middleName: form.middleName || undefined,
+  //       lastName: form.lastName || undefined,
+  //       dateOfBirth: form.dateOfBirth || undefined,
+  //       gender: form.gender || undefined,
+  //       bloodGroup: form.bloodGroup || undefined,
+  //       photoPath: form.photoPath || undefined,
+  //       phone: form.phone || undefined,
+  //       email: form.email || undefined,
+  //       address: form.address || undefined,
+  //       city: form.city || undefined,
+  //       postalCode: form.postalCode || undefined,
+  //       admissionDate: form.admissionDate || undefined,
+  //     };
+
+  //     await updateStudent(Number(studentID), payload);
+
+  //     navigate("/school/students");
+  //   } catch (err: any) {
+  //     console.error("Update student error:", err);
+
+  //     setError(err?.response?.data?.detail || "Failed to update student.");
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
 
   // =========================================================
   // Loading
@@ -450,24 +547,55 @@ const StudentEdit = () => {
         </div>
 
         {/* Photo */}
-        <div className="mb-6">
-          <h2 className="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-800">
-            Photo
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-800 mb-5">
+            Student Photo
           </h2>
+          <div className="max-w-md">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+
+                if (!file) {
+                  return;
+                }
+
+                setPhotoFile(file);
+
+                setPhotoPreview(URL.createObjectURL(file));
+              }}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="h-28 w-28 overflow-hidden rounded-lg border bg-gray-50">
+            {photoPreview ? (
+              <img
+                src={photoPreview}
+                alt="Student"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                No Photo
+              </div>
+            )}
+          </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Photo Path
-            </label>
-
             <input
-              type="text"
-              name="photoPath"
-              value={form.photoPath || ""}
-              onChange={handleChange}
-              placeholder="Photo path"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handlePhotoChange}
             />
+
+            <p className="mt-1 text-xs text-gray-500">
+              JPG, PNG or WEBP. Maximum 5 MB.
+            </p>
           </div>
         </div>
 

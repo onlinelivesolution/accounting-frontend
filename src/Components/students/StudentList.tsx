@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Eye, Pencil, Plus, Search, UserX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getStudentPhotoUrl } from "@/utils/studentPhoto";
 
 import {
   deactivateStudent,
@@ -114,6 +115,8 @@ const StudentList = () => {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-4 py-3 text-left">Photo</th>
+
               <th className="px-4 py-3 text-left">Code</th>
 
               <th className="px-4 py-3 text-left">Admission No</th>
@@ -146,18 +149,40 @@ const StudentList = () => {
             ) : (
               filteredStudents.map((student) => (
                 <tr key={student.studentID} className="border-t">
-                  <td className="px-4 py-3">{student.studentCode}</td>
-
-                  <td className="px-4 py-3">{student.admissionNo}</td>
-
-                  <td className="px-4 py-3 font-medium">
-                    {student.firstName} {student.middleName} {student.lastName}
+                  {/* Photo */}
+                  <td className="px-4 py-3">
+                    {student.photoPath ? (
+                      <img
+                        src={getStudentPhotoUrl(student.photoPath) || ""}
+                        alt={`${student.firstName} photo`}
+                        className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+                        N/A
+                      </div>
+                    )}
                   </td>
 
-                  <td className="px-4 py-3">{student.gender}</td>
+                  {/* Student Code */}
+                  <td className="px-4 py-3">{student.studentCode}</td>
 
-                  <td className="px-4 py-3">{student.phone}</td>
+                  {/* Admission No */}
+                  <td className="px-4 py-3">{student.admissionNo}</td>
 
+                  {/* Student Name */}
+                  <td className="px-4 py-3 font-medium">
+                    {student.firstName} {student.middleName || ""}{" "}
+                    {student.lastName || ""}
+                  </td>
+
+                  {/* Gender */}
+                  <td className="px-4 py-3">{student.gender || "-"}</td>
+
+                  {/* Phone */}
+                  <td className="px-4 py-3">{student.phone || "-"}</td>
+
+                  {/* Status */}
                   <td className="px-4 py-3">
                     <span
                       className={
@@ -170,9 +195,11 @@ const StudentList = () => {
                     </span>
                   </td>
 
-                  <td className="px-4 py-3">
+                  {/* Actions */}
+                  {/* <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button
+                        type="button"
                         onClick={() =>
                           navigate(`/school/students/${student.studentID}/edit`)
                         }
@@ -184,9 +211,49 @@ const StudentList = () => {
 
                       {student.status === "Active" && (
                         <button
+                          type="button"
                           onClick={() => handleDeactivate(student)}
                           className="p-2 rounded hover:bg-red-50 text-red-600"
                           title="Deactivate"
+                        >
+                          <UserX size={18} />
+                        </button>
+                      )}
+                    </div>
+                  </td> */}
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      {/* View */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/school/students/${student.studentID}/view`)
+                        }
+                        className="p-2 rounded hover:bg-blue-50 text-blue-600"
+                        title="View Student"
+                      >
+                        <Eye size={18} />
+                      </button>
+
+                      {/* Edit */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/school/students/${student.studentID}/edit`)
+                        }
+                        className="p-2 rounded hover:bg-gray-100"
+                        title="Edit Student"
+                      >
+                        <Pencil size={18} />
+                      </button>
+
+                      {/* Deactivate */}
+                      {student.status === "Active" && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeactivate(student)}
+                          className="p-2 rounded hover:bg-red-50 text-red-600"
+                          title="Deactivate Student"
                         >
                           <UserX size={18} />
                         </button>
