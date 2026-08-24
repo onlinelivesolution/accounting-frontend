@@ -1,9 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { getStudentPhotoUrl } from "@/utils/studentPhoto";
 
 import {
   getStudentById,
+  getStudent,
   updateStudent,
   Student,
   StudentUpdateRequest,
@@ -20,7 +22,7 @@ const StudentEdit = () => {
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
-  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const [form, setForm] = useState<StudentUpdateRequest>({
     studentCode: "",
@@ -55,6 +57,7 @@ const StudentEdit = () => {
       try {
         setLoading(true);
         setError("");
+        const data = await getStudent(Number(studentID));
 
         const student: Student = await getStudentById(Number(studentID));
 
@@ -75,6 +78,13 @@ const StudentEdit = () => {
           postalCode: student.postalCode || "",
           admissionDate: student.admissionDate || "",
         });
+
+        const existingPhotoUrl = getStudentPhotoUrl(data.photoPath);
+
+        setPhotoPreview(existingPhotoUrl);
+        setPhotoFile(null);
+
+        // Load existing student photo
       } catch (err: any) {
         console.error("Load student error:", err);
 
@@ -202,47 +212,6 @@ const StudentEdit = () => {
       return URL.createObjectURL(file);
     });
   };
-  // const handleSubmit = async (e: FormEvent) => {
-  //   e.preventDefault();
-
-  //   if (!studentID) {
-  //     setError("Student ID is missing.");
-  //     return;
-  //   }
-
-  //   try {
-  //     setSaving(true);
-  //     setError("");
-
-  //     const payload: StudentUpdateRequest = {
-  //       ...form,
-
-  //       // Convert empty optional values to undefined
-  //       middleName: form.middleName || undefined,
-  //       lastName: form.lastName || undefined,
-  //       dateOfBirth: form.dateOfBirth || undefined,
-  //       gender: form.gender || undefined,
-  //       bloodGroup: form.bloodGroup || undefined,
-  //       photoPath: form.photoPath || undefined,
-  //       phone: form.phone || undefined,
-  //       email: form.email || undefined,
-  //       address: form.address || undefined,
-  //       city: form.city || undefined,
-  //       postalCode: form.postalCode || undefined,
-  //       admissionDate: form.admissionDate || undefined,
-  //     };
-
-  //     await updateStudent(Number(studentID), payload);
-
-  //     navigate("/school/students");
-  //   } catch (err: any) {
-  //     console.error("Update student error:", err);
-
-  //     setError(err?.response?.data?.detail || "Failed to update student.");
-  //   } finally {
-  //     setSaving(false);
-  //   }
-  // };
 
   // =========================================================
   // Loading
@@ -551,51 +520,42 @@ const StudentEdit = () => {
           <h2 className="text-lg font-semibold text-gray-800 mb-5">
             Student Photo
           </h2>
-          <div className="max-w-md">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
 
-                if (!file) {
-                  return;
-                }
+          <div className="flex items-start gap-6">
+            {/* Photo Preview */}
+            <div className="h-28 w-28 overflow-hidden rounded-lg border bg-gray-50 flex-shrink-0">
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Student"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                  No Photo
+                </div>
+              )}
+            </div>
 
-                setPhotoFile(file);
-
-                setPhotoPreview(URL.createObjectURL(file));
-              }}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="h-28 w-28 overflow-hidden rounded-lg border bg-gray-50">
-            {photoPreview ? (
-              <img
-                src={photoPreview}
-                alt="Student"
-                className="h-full w-full object-cover"
+            {/* File Selection */}
+            <div className="max-w-md">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
               />
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs text-gray-400">
-                No Photo
-              </div>
-            )}
-          </div>
 
-          <div>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handlePhotoChange}
-            />
+              <p className="mt-1 text-xs text-gray-500">
+                JPG, PNG or WEBP. Maximum 5 MB.
+              </p>
 
-            <p className="mt-1 text-xs text-gray-500">
-              JPG, PNG or WEBP. Maximum 5 MB.
-            </p>
+              {photoFile && (
+                <p className="mt-2 text-xs text-green-600">
+                  New photo selected: {photoFile.name}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
