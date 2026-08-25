@@ -56,6 +56,8 @@ import StudentEnrollmentList from "./Components/students/enrollment/StudentEnrol
 import StudentEnrollmentAdd from "./Components/students/enrollment/StudentEnrollmentAdd";
 import StudentEnrollmentEdit from "./Components/students/enrollment/StudentEnrollmentEdit";
 
+import TenantBanner from "@/Components/tenant/TenantBanner";
+
 // ------- Types -------
 interface MenuItem {
   name: string;
@@ -1037,601 +1039,613 @@ const App: React.FC = () => {
         menuItems={menuItems}
         onNavigate={navigateAndClose}
       />
-
+      {/* {user && <TenantBanner />} */}
       {/* Main area */}
-      <main
-        className="
-    min-w-0
-    flex-1
-    p-3
-    sm:p-4
-    md:p-6
-  "
-      >
-        <Routes>
-          <Route path="/" element={<LoginUser />} />
-          <Route path="/login" element={<LoginUser />} />
+      <main className="min-w-0 flex-1">
+        {/* Tenant Banner */}
 
-          <Route path="/verify-otp" element={<VerifyOTP />} />
+        {/* Page Content */}
+        <div className="p-3 sm:p-4 md:p-6">
+          <Routes>
+            <Route path="/" element={<LoginUser />} />
+            <Route path="/login" element={<LoginUser />} />
 
-          <Route
-            path="/journalEntry"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <JournalEntry />
-              </ProtectedRoute>
-            }
-          />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
 
-          <Route
-            path="/ViewQuotations"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <ViewQuotation />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/journalEntry"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <JournalEntry />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/Quotations"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <Quotations />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/ViewQuotations"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <ViewQuotation />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-orders"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <ViewSalesOrder />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/Quotations"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <Quotations />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-orders/new"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <SalesOrders />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/sales-orders"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <ViewSalesOrder />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-orders/:id/edit"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <SalesOrders />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/sales-orders/new"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <SalesOrders />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-orders/:id/copy"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <SalesOrders />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/sales-orders/:id/edit"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <SalesOrders />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-orders/:id/view"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <ViewSalesOrder />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/sales-orders/:id/copy"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <SalesOrders />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-invoices"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <SalesInvoiceView />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-invoices/new"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <SalesInvoices />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/sales-orders/:id/view"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <ViewSalesOrder />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-invoices/:id/edit"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <SalesInvoices />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/sales-invoices"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <SalesInvoiceView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sales-invoices/new"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <SalesInvoices />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-invoices/:id/copy"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <SalesInvoices />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/sales-invoices/:id/edit"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <SalesInvoices />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/sales-invoices/:id/view"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <SalesInvoiceView />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/customer-receipts"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <ViewCustomerReceipt />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/customer-receipts/new"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <CustomerReceipt />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/sales-invoices/:id/copy"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <SalesInvoices />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/register-tenant" element={<RegisterTenant />} />
+            <Route
+              path="/sales-invoices/:id/view"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <SalesInvoiceView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customer-receipts"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <ViewCustomerReceipt />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customer-receipts/new"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <CustomerReceipt />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/admin/manage-tenants"
-            element={
-              <AdminProtectedRoute>
-                <TenantManagement />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <AdminProtectedRoute>
-                <AdminDashboard />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/register-tenant" element={<RegisterTenant />} />
 
-          <Route path="/admin/verify-otp" element={<AdminVerifyOTP />} />
+            <Route
+              path="/admin/manage-tenants"
+              element={
+                <AdminProtectedRoute>
+                  <TenantManagement />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <AdminProtectedRoute>
+                  <AdminDashboard />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route path="/admin/login" element={<AdminLogin />} />
 
-          <Route
-            path="/customer-receipts/:id/edit"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <CustomerReceipt />
-              </ProtectedRoute>
-            }
-          />
+            <Route path="/admin/verify-otp" element={<AdminVerifyOTP />} />
 
-          <Route
-            path="/customer-receipts/:id/copy"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <CustomerReceipt />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/customer-receipts/:id/edit"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <CustomerReceipt />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/customer-receipts/:id/view"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <ViewCustomerReceipt />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/customer-receipts/:id/copy"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <CustomerReceipt />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/accounting-settings"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <AccountingRuleSettings />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/customer-receipts/:id/view"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <ViewCustomerReceipt />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/BalanceSheet"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <BalanceSheet />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/accounting-settings"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <AccountingRuleSettings />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/ProfitAndLoss"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <ProfitAndLoss />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/BalanceSheet"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <BalanceSheet />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/TrialBalance"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <TrialBalance />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/ProfitAndLoss"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <ProfitAndLoss />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/BankAccounts"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <BankAccounts />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/TrialBalance"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <TrialBalance />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/AddNewAccount"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <AddNewAccount />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/DepositWithdraw"
-            element={
-              <ProtectedRoute
-                permissionName="Accounts"
-                actionName="Add Account"
-              >
-                <DepositWithdraw />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/BankAccounts"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <BankAccounts />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/employees"
-            element={
-              <ProtectedRoute
-                permissionName="Employees"
-                actionName="Add Employee"
-              >
-                <Employee />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/AddNewAccount"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <AddNewAccount />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/DepositWithdraw"
+              element={
+                <ProtectedRoute
+                  permissionName="Accounts"
+                  actionName="Add Account"
+                >
+                  <DepositWithdraw />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/payScaleMappings"
-            element={
-              <ProtectedRoute
-                permissionName="Employees"
-                actionName="Add Employee"
-              >
-                <PayscaleMappings />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/employees"
+              element={
+                <ProtectedRoute
+                  permissionName="Employees"
+                  actionName="Add Employee"
+                >
+                  <Employee />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/generateSalary"
-            element={
-              <ProtectedRoute permissionName="Salary" actionName="Add Employee">
-                <GenerateSalaries />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/generateBonuses"
-            element={
-              <ProtectedRoute permissionName="Salary" actionName="Add Employee">
-                <GenerateBonuses />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/payScaleMappings"
+              element={
+                <ProtectedRoute
+                  permissionName="Employees"
+                  actionName="Add Employee"
+                >
+                  <PayscaleMappings />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/approveSalary"
-            element={
-              <ProtectedRoute permissionName="Salary" actionName="Add Employee">
-                <ApproveSalaries />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/generateSalary"
+              element={
+                <ProtectedRoute
+                  permissionName="Salary"
+                  actionName="Add Employee"
+                >
+                  <GenerateSalaries />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generateBonuses"
+              element={
+                <ProtectedRoute
+                  permissionName="Salary"
+                  actionName="Add Employee"
+                >
+                  <GenerateBonuses />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/approveSalary"
-            element={
-              <ProtectedRoute permissionName="Salary" actionName="Add Employee">
-                <ApproveSalaries />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/approveSalary"
+              element={
+                <ProtectedRoute
+                  permissionName="Salary"
+                  actionName="Add Employee"
+                >
+                  <ApproveSalaries />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/financial/salary"
-            element={
-              <ProtectedRoute permissionName="Financial" actionName="View">
-                <GenerateSalaries />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/approveSalary"
+              element={
+                <ProtectedRoute
+                  permissionName="Salary"
+                  actionName="Add Employee"
+                >
+                  <ApproveSalaries />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/financial/bonus"
-            element={
-              <ProtectedRoute permissionName="Financial" actionName="View">
-                <GenerateBonuses />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/financial/salary"
+              element={
+                <ProtectedRoute permissionName="Financial" actionName="View">
+                  <GenerateSalaries />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/financial/expense"
-            element={
-              <ProtectedRoute permissionName="Financial" actionName="View">
-                <h2>Expense Page</h2>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/financial/bonus"
+              element={
+                <ProtectedRoute permissionName="Financial" actionName="View">
+                  <GenerateBonuses />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/financial/payment"
-            element={
-              <ProtectedRoute permissionName="Financial" actionName="View">
-                <PaymentSalary />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/financial/expense"
+              element={
+                <ProtectedRoute permissionName="Financial" actionName="View">
+                  <h2>Expense Page</h2>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/manageUser"
-            element={
-              <ProtectedRoute permissionName="User" actionName="Update User">
-                <UserInfos />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/financial/payment"
+              element={
+                <ProtectedRoute permissionName="Financial" actionName="View">
+                  <PaymentSalary />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/managePermission"
-            element={
-              <ProtectedRoute permissionName="User" actionName="Update User">
-                <PermissionAssign />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/manageUser"
+              element={
+                <ProtectedRoute permissionName="User" actionName="Update User">
+                  <UserInfos />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/students"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="List">
-                <StudentList />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/managePermission"
+              element={
+                <ProtectedRoute permissionName="User" actionName="Update User">
+                  <PermissionAssign />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/students/add"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="add">
-                <StudentAdd />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/school/students"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="List">
+                  <StudentList />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/students/:studentID/edit"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="edit">
-                <StudentEdit />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/school/students/add"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="add">
+                  <StudentAdd />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/students/:studentID/view"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="view">
-                <StudentView />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/school/students/:studentID/edit"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="edit">
+                  <StudentEdit />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/academic-year"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <AcademicYear />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/school/students/:studentID/view"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="view">
+                  <StudentView />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/Classes"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Classes />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/school/Sections"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Sections />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/school/Enrollment"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Enrollment />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/school/Examinations"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Examinations />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/school/Results"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Results />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/school/Promotion"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Promotions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/school/fee-heads"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Feeheads />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/school/student-fees"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Studentfees />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/school/student-fees"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="Add">
-                <Feepayments />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/school/academic-year"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <AcademicYear />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/student-enrollments"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="view">
-                <StudentEnrollmentList />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/school/Classes"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Classes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school/Sections"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Sections />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school/Enrollment"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Enrollment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school/Examinations"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Examinations />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school/Results"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Results />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school/Promotion"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Promotions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school/fee-heads"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Feeheads />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school/student-fees"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Studentfees />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/school/student-fees"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="Add">
+                  <Feepayments />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/student-enrollments/add"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="create">
-                <StudentEnrollmentAdd />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/school/student-enrollments"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="view">
+                  <StudentEnrollmentList />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/school/student-enrollments/:enrollmentID/edit"
-            element={
-              <ProtectedRoute permissionName="Education" actionName="edit">
-                <StudentEnrollmentEdit />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/school/student-enrollments/add"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="create">
+                  <StudentEnrollmentAdd />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/unauthorized" element={<h2>Unauthorized Access</h2>} />
-        </Routes>
+            <Route
+              path="/school/student-enrollments/:enrollmentID/edit"
+              element={
+                <ProtectedRoute permissionName="Education" actionName="edit">
+                  <StudentEnrollmentEdit />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/unauthorized"
+              element={<h2>Unauthorized Access</h2>}
+            />
+          </Routes>
+        </div>
       </main>
     </div>
   );
