@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (isSuperAdmin) {
       window.location.href = "/admin/login";
     } else {
-      window.location.href = "/";
+      window.location.href = "/login";
     }
   };
 
